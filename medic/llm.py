@@ -10,6 +10,8 @@ dashboard shows the patient run and the repair run side by side.
 from __future__ import annotations
 
 import json
+import os
+import time
 import re
 from typing import Any
 
@@ -52,46 +54,115 @@ def ask_json(
     user: str,
     recorder=None,
     span_name: str = "medic_llm",
-    max_tokens: int = 1200,
+    max_tokens: int | None = None,
+    budget_retries: int = 2,
+    rate_limit_retries: int = 6,
 ) -> tuple[dict, dict]:
-    """Returns (parsed_json, usage_metrics). Usage is measured, never guessed."""
+    """Returns (parsed_json, usage_metrics). Usage is measured, never guessed.
+
+    `max_tokens` must allow for REASONING tokens. openai/gpt-oss-20b spends
+    ~73 of 87 completion tokens thinking on a trivial reply; a large span-tree
+    prompt pushes its reasoning well past 1200, and the provider then rejects
+    the request with `json_validate_failed: max completion tokens reached
+    before generating a valid document` — an error that looks like a bad prompt
+    but is really a truncated budget.
+
+    A truncation is retried with a larger budget before giving up, because one
+    heuristic ceiling is wrong for every prompt and every model.
+    """
     client = _client()
     s = llm_settings()
     ensure_traced()
+    ceiling = max_tokens or int(os.environ.get("MEDIC_LLM_MAX_TOKENS", "8000"))
 
-    span_cm = (
-        recorder.span("LLM", span_name, {"system": system[:200], "user": user[:400]})
-        if recorder
-        else _null_span()
-    )
-    with span_cm as span:
-        resp = client.chat.completions.create(
-            model=s["model"],
-            messages=[
-                {"role": "system", "content": system},
-                {"role": "user", "content": user},
-            ],
-            temperature=0,
-            response_format={"type": "json_object"},
-            max_tokens=max_tokens,
-        )
-        content = resp.choices[0].message.content or ""
-        usage = getattr(resp, "usage", None)
-        p_tok = getattr(usage, "prompt_tokens", 0) or 0
-        c_tok = getattr(usage, "completion_tokens", 0) or 0
-        if span is not None:
-            span["prompt_tokens"] = p_tok
-            span["completion_tokens"] = c_tok
-            span["total_tokens"] = p_tok + c_tok
-            span["output"] = content[:2000]
+    # Budget exhaustion doubles the token ceiling; a rate limit just waits.
+    # They need separate budgets: a heal can be rate-limited many times in one
+    # minute and should survive it, while doubling max_tokens past a truncation
+    # twice is pointless.
+    last_err: Exception | None = None
+    budget_attempts = 0
+    for attempt in range(rate_limit_retries + 1):
+        limit = ceiling * (2 ** budget_attempts)
+        try:
+            span_cm = (
+                recorder.span("LLM", span_name, {"system": system[:200], "user": user[:400]})
+                if recorder
+                else _null_span()
+            )
+            with span_cm as span:
+                resp = client.chat.completions.create(
+                    model=s["model"],
+                    messages=[
+                        {"role": "system", "content": system},
+                        {"role": "user", "content": user},
+                    ],
+                    temperature=0,
+                    response_format={"type": "json_object"},
+                    max_tokens=limit,
+                )
+                content = resp.choices[0].message.content or ""
+                usage = getattr(resp, "usage", None)
+                p_tok = getattr(usage, "prompt_tokens", 0) or 0
+                c_tok = getattr(usage, "completion_tokens", 0) or 0
+                reasoning = 0
+                details = getattr(usage, "completion_tokens_details", None)
+                if details is not None:
+                    reasoning = getattr(details, "reasoning_tokens", 0) or 0
+                if span is not None:
+                    span["prompt_tokens"] = p_tok
+                    span["completion_tokens"] = c_tok
+                    span["total_tokens"] = p_tok + c_tok
+                    span["output"] = content[:2000]
 
-    metrics = {
-        "model": s["model"],
-        "prompt_tokens": p_tok,
-        "completion_tokens": c_tok,
-        "total_tokens": p_tok + c_tok,
-    }
-    return parse_json(content), metrics
+            metrics = {
+                "model": s["model"],
+                "prompt_tokens": p_tok,
+                "completion_tokens": c_tok,
+                "reasoning_tokens": reasoning,
+                "total_tokens": p_tok + c_tok,
+                "max_tokens_budget": limit,
+            }
+            return parse_json(content), metrics
+        except Exception as exc:
+            last_err = exc
+            if _is_rate_limited(exc):
+                # Groq enforces a tokens-per-minute budget. A heal makes many
+                # calls in a burst (diagnose, surgeon, then verify on train +
+                # every held-out task), so hitting it is routine, not an error.
+                # Retry with the delay the provider states, bounded.
+                wait = _retry_after(exc, attempt)
+                time.sleep(min(wait, 30.0))
+                continue
+            if _is_budget_error(exc):
+                budget_attempts += 1
+                if budget_attempts > budget_retries:
+                    raise
+                continue
+            raise
+
+    raise last_err if last_err else RuntimeError("ask_json failed with no error recorded")
+
+
+def _is_rate_limited(exc: Exception) -> bool:
+    text = f"{type(exc).__name__}: {exc}".lower()
+    return "rate limit" in text or "429" in text or "rate_limit_exceeded" in text
+
+
+def _retry_after(exc: Exception, attempt: int) -> float:
+    """Use the provider's stated delay when it gives one; else exponential."""
+    match = re.search(r"try again in ([0-9.]+)", str(exc))
+    if match:
+        try:
+            return float(match.group(1)) + 0.5
+        except ValueError:
+            pass
+    return min(2.0 * (2 ** attempt), 20.0)
+
+
+def _is_budget_error(exc: Exception) -> bool:
+    """Only budget exhaustion is worth retrying; a bad prompt is not."""
+    text = f"{type(exc).__name__}: {exc}".lower()
+    return "max completion tokens" in text or "json_validate_failed" in text
 
 
 def parse_json(text: str) -> dict:

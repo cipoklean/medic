@@ -89,10 +89,31 @@ materialises the transcript and creates a checkpoint, which then needs an
 
 ### ⚠️ CORRECTION — what is and is NOT yet proven (2026-10-10 08:35 WAT)
 
-**The offline heal tests do NOT prove "Medic heals anything".** They contain no LLM at
-all: `tests/test_heal_machinery.py` (renamed from `test_heal.py`) takes `failure_type`
-straight from the **deterministic hard check** and calls `surgeon.deterministic_patch()`,
-skipping `diagnose()` and `surgeon.propose()` entirely.
+### ✅ REAL-LLM HEAL ACHIEVED (2026-10-10 09:0x WAT) — the claim is now earned
+
+`heal --bug loop --llm real` on `openai/gpt-oss-20b`: the model read the failing
+trace, diagnosed it, and proposed a `system_prompt` patch adding an explicit stop
+rule. Verification: **train PASS (6 steps) + both held-out PASS (5 and 3 steps)**.
+
+Before that claim could be made, three real defects were found and fixed:
+- `medic/llm.py` set `max_tokens=1200`; gpt-oss-20b spends ~73 of 87 completion
+  tokens on REASONING, so a large span-tree prompt exhausted the budget and the
+  provider returned `json_validate_failed: max completion tokens reached`. Budget
+  exhaustion now doubles the ceiling and retries; a measured `reasoning_tokens`
+  field is recorded.
+- Groq enforces **8000 tokens/minute**. A heal bursts diagnose + surgeon +
+  verify(train + 2 held-out), so rate limiting is routine, not an error. Now
+  retried with the delay the provider states, with a SEPARATE budget from the
+  token-ceiling retries (doubling `max_tokens` past a truncation is pointless).
+- The before-run panel printed a red "check FAILED" above a PASSING reason
+  because it was hardcoded to FAIL.
+
+### ⚠️ Earlier correction — the offline tests never called an LLM
+
+**The offline heal tests do NOT prove "Medic heals anything".** `tests/test_heal_machinery.py`
+(renamed from `test_heal.py`) takes `failure_type` straight from the **deterministic hard check**
+and calls `surgeon.deterministic_patch()`, skipping `diagnose()` and `surgeon.propose()` entirely.
+A guard test fails if anyone routes them through the real diagnoser.
 
 They prove only that the **machinery** around the model is sound: local trace fallback,
 a hand-written patch satisfying train + held-out, the allowlist and type checks,
