@@ -1,0 +1,92 @@
+{
+  "claim": "A real LLM read the failing trace, diagnosed it, and proposed a medic.yaml patch that cleared the train task AND every held-out task.",
+  "provenance": "Captured verbatim from the terminal output of `cli.py heal --bug loop --llm real` (process proc_fcd1160d55e2), not re-run and not reconstructed. The structured fields below are transcribed from that output; the diff is the unified diff the UI printed.",
+  "captured_at": "2026-10-10T08:16Z",
+  "model": "openai/gpt-oss-20b (Groq), temperature 0, seed 7, fixtures only",
+  "bug": "loop",
+  "before": {
+    "local_trace": "runs/ad8f0f2b73cb4e5e.json",
+    "passed": false,
+    "failure_type": "loop",
+    "reason": "used 10 steps, over the limit of 8",
+    "details": [
+      "stopped because: final_answer"
+    ],
+    "steps": 10,
+    "total_tokens": 15478,
+    "est_cost_usd": 0.056814,
+    "latency_ms": 24012,
+    "reproduces_on_real_model": true,
+    "note": "The strengthened loop preset (stop rule removed, explicit licence to keep searching, max_steps 40) DOES reproduce on a real model. Measured earlier at 12 steps / 23,136 tokens on the same preset; this run is a second, independent reproduction at 10 steps / 15,478 tokens.",
+    "metrics": {
+      "steps": 10,
+      "total_tokens": 15478,
+      "est_cost_usd": 0.056814,
+      "latency_ms": 24012
+    },
+    "run_id": "ad8f0f2b73cb4e5e"
+  },
+  "attempts": [
+    {
+      "attempt": 1,
+      "diagnosis": {
+        "failing_span_id": "ba760cf318f943b1",
+        "failure_type": "loop",
+        "root_cause": "The system_prompt instructs the agent to keep searching until multiple independent confirmations are found, causing it to exceed the step limit.",
+        "evidence": "Final answer enumerated unit price $128.40, quantity 250, subtotal $32,100, volume discount 12% = $3,852, total $28,248 \u2014 correct answer, but arrived at after exceeding the step budget.",
+        "confidence": 0.92,
+        "provenance": "LLM proposal; the verdict is the deterministic hard check, not this number"
+      },
+      "patch": {
+        "field": "system_prompt",
+        "rationale": "Added explicit stop rule to prevent endless searching and loop.",
+        "change_summary": "Replaced 'never stop while any further search could still help' with '...until you have found at least one reliable source that provides the necessary information and have computed the answer. Stop searching once the answer is computed.'"
+      },
+      "verify": {
+        "train": {
+          "task_id": "loop-widgets",
+          "passed": true,
+          "steps": 6,
+          "total_tokens": 7587,
+          "reason": "answered in 6 steps (limit 8)"
+        },
+        "heldout": [
+          {
+            "task_id": "loop-solar",
+            "passed": true,
+            "steps": 5,
+            "total_tokens": 4872,
+            "reason": "answered in 5 steps (limit 8)"
+          },
+          {
+            "task_id": "loop-gadgets",
+            "passed": true,
+            "steps": 3,
+            "total_tokens": 2823,
+            "reason": "answered in 3 steps (limit 8)"
+          }
+        ],
+        "all_passed": true
+      },
+      "llm_metrics": {
+        "model": "openai/gpt-oss-20b",
+        "total_tokens": null,
+        "note": "diagnose+surgeon token usage was not printed by the CLI run that produced this heal; recorded as unknown rather than estimated"
+      }
+    }
+  ],
+  "healed": true,
+  "patch_written_to_medic_yaml": false,
+  "patch_note": "Held in memory unless --apply is passed. medic.yaml was left at the clean baseline.",
+  "heldout_task_ids": [
+    "loop-solar",
+    "loop-gadgets"
+  ],
+  "heldout_never_shown_to_diagnose": true,
+  "why_this_artefact_is_transcribed": "The structured re-capture (scripts/probe_real_heal.py) could not be completed: Groq's free tier allows 200,000 tokens/day and this session had consumed ~199,100 by the time it was written. A single real heal costs 15,000-40,000 tokens. Re-running to regenerate identical numbers would have been a poor use of the remaining budget, so the authentic terminal output above is the record. The numbers were not edited, rounded, or recomputed.",
+  "not_proven_by_this": [
+    "Real-model heals for bugs 1, 2 or 4 \u2014 not attempted.",
+    "Bug 1 (wrong_args) does not reproduce on this model at all: it reads the JSON schema, not the vague prose description. Demonstrated with the scripted agent instead.",
+    "Determinism of a real-model heal across repeated runs \u2014 a real model at temperature 0 is not guaranteed identical across attempts."
+  ]
+}
