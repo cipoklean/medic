@@ -58,6 +58,16 @@ def limiter_for(provider: str) -> RateLimiter:
         return _limiters[provider]
 
 
+# Conservative defaults per provider. Free endpoints are tighter than paid
+# ones, and a trip mid-heal leaves a half-written trace, so the default for an
+# unknown free host is the stingiest one we know rather than a middle guess.
+DEFAULT_RPM = {
+    "nara": 15,        # free plan: 15 req/min
+    "openrouter": 10,  # free models are aggressively rate limited
+    "groq": 15,
+}
+
+
 def _rpm_for(provider: str) -> int:
     specific = os.environ.get(f"MEDIC_RATE_RPM_{provider.upper()}")
     if specific:
@@ -65,11 +75,14 @@ def _rpm_for(provider: str) -> int:
             return max(1, int(specific))
         except ValueError:
             pass
-    try:
-        return max(1, int(os.environ.get("MEDIC_RATE_RPM", "15")))
-    except ValueError:
-        return 15
+    env_default = os.environ.get("MEDIC_RATE_RPM")
+    if env_default:
+        try:
+            return max(1, int(env_default))
+        except ValueError:
+            pass
+    return DEFAULT_RPM.get(provider, 10)
 
 
 def describe() -> dict:
-    return {name: _rpm_for(name) for name in ("nara", "groq", "default")}
+    return {name: _rpm_for(name) for name in ("nara", "groq", "openrouter")}

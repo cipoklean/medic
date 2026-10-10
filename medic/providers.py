@@ -41,12 +41,30 @@ class Provider:
         return f"{self.name}:{self.model}"
 
 
-# Named providers, read from the environment. Only these three shapes exist so
-# a typo is a missing provider, not a silently-unused variable.
+# Named providers, read from the environment. Explicit shapes so a typo is a
+# missing provider rather than a silently-unused variable.
+#
+# groq and openrouter can both serve openai/gpt-oss-20b, which is deliberate:
+# the loop bug reproduces on that model, and two hosts means one exhausted
+# daily budget cannot kill the demo. Same weights on a different host is NOT
+# assumed to behave identically - scripts/probe_real_llm.py verifies per host,
+# and evidence/loop_capability_matrix.json records the result either way.
 NAMED: dict[str, tuple[str, str, str]] = {
     # name: (api-key env, base-url env, model env)
     "nara": ("LLM_API_KEY_NARA", "LLM_BASE_URL_NARA", "LLM_MODEL_NARA"),
     "groq": ("LLM_API_KEY", "LLM_BASE_URL", "LLM_MODEL"),
+    "openrouter": (
+        "LLM_API_KEY_OPENROUTER",
+        "LLM_BASE_URL_OPENROUTER",
+        "LLM_MODEL_OPENROUTER",
+    ),
+}
+
+# Default base URLs, so only the KEY is needed for the well-known hosts.
+DEFAULT_BASE_URL = {
+    "nara": "https://router.bynara.id/v1",
+    "groq": "https://api.groq.com/openai/v1",
+    "openrouter": "https://openrouter.ai/api/v1",
 }
 
 
@@ -58,7 +76,7 @@ def _provider(name: str) -> Provider | None:
     return Provider(
         name=name,
         api_key=get(key_env),
-        base_url=get(base_env) or ("https://router.bynara.id/v1" if name == "nara" else ""),
+        base_url=get(base_env) or DEFAULT_BASE_URL.get(name, ""),
         model=get(model_env),
     )
 

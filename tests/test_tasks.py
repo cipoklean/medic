@@ -83,8 +83,40 @@ def check_determinism(times: int = 2) -> list[str]:
     return problems
 
 
+def check_presets_are_distinguishable() -> list[str]:  # noqa: D401
+    """Every preset must differ from clean in a way a config diff can show.
+
+    Found by measurement: bug 2's config half sets retry_on_parse_error to
+    false, which is ALREADY the clean value, so the merged config was identical
+    to clean and a clean-vs-buggy comparison measured nothing. The bug is real
+    (the runtime switch breaks the tool), but reporting it as a config
+    difference would have been a false claim.
+    """
+    problems = []
+    clean = clean_config()
+    for bug in BUGS:
+        reset_bug(bug)                      # clears runtime bug state too
+        config = apply_bug(bug, write=False)
+        reset_bug()
+        differing = [
+            k for k in set(clean) | set(config) if clean.get(k) != config.get(k)
+        ]
+        runtime_only = bug == "parse_error"
+        if not differing and not runtime_only:
+            problems.append(
+                f"{bug}: preset produces a config identical to clean, so a "
+                f"clean-vs-buggy comparison would measure nothing"
+            )
+        elif not differing and runtime_only:
+            print(f"    (note: {bug} is runtime-only; its config half is a no-op "
+                  f"by design and the fix is one boolean)")
+    return problems
+
+
 def main() -> int:
     failures = []
+    print("→ every preset is distinguishable from clean")
+    failures += check_presets_are_distinguishable()
     print("→ clean baseline must pass every task")
     failures += check_clean_passes()
     print("→ each injected bug must fail its train task")

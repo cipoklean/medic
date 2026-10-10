@@ -1,14 +1,19 @@
 # Bug 2 — MALFORMED JSON.
 #
-# This bug has TWO halves and they are different in kind:
-#   * the CONFIG half  -> `retry_on_parse_error: false` (this file)
-#   * the RUNTIME half -> a fixture tool returning slightly-broken JSON,
-#                         toggled by bugs.inject.apply_bug() via
-#                         patient.tools.set_broken_json(True)
+# TWO halves, and this file is only one of them:
+#   * the RUNTIME half -> patient.tools.fetch_page returns slightly-broken JSON
+#                         (trailing comma), switched on by bugs/inject.apply_bug()
+#   * the CONFIG half  -> this file
 #
-# The runtime half is a tool BEHAVIOUR change, not a config change, because the
-# spec's bug table says so. The point of the bug is that the agent has NO way
-# to recover: the tool lies, and the config forbids retrying. Medic's fix is
-# the config half — flipping retry_on_parse_error to true — which is the whole
-# point of the demo: the patch is one boolean, and it is the RIGHT boolean.
+# The config half is `retry_on_parse_error: false`, which matches the clean
+# baseline. That is the POINT: the config already forbids recovery, so the only
+# change needed to FIX this bug is flipping one boolean to true. Medic's patch
+# is therefore a single-field, single-token edit.
+#
+# This was found by measuring, not by reading: an earlier probe reported the
+# clean and "buggy" configs as differing, but a diff of the merged YAML showed
+# config-differs-in: [] — the two runs were identical and the result was
+# meaningless. A preset that cannot be distinguished from clean by its own
+# config is fine here (the runtime switch does the work) but it must never be
+# reported as a config difference.
 retry_on_parse_error: false

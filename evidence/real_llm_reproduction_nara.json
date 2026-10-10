@@ -1,0 +1,99 @@
+{
+  "note": "Real model, temperature 0, fixtures only. No preset tuning: whatever the model did is recorded as-is.",
+  "model_note": "see .env LLM_MODEL",
+  "results": [
+    {
+      "bug": "parse_error",
+      "config": "clean",
+      "run_id": "2f68b99e3909457d",
+      "neatlogs_trace_id": null,
+      "local_trace": "/home/ubuntu/medic/runs/2f68b99e3909457d.json",
+      "passed": true,
+      "failure_type": null,
+      "reason": "survived the malformed payload and still answered 5,000.00",
+      "details": [],
+      "steps": 2,
+      "total_tokens": 2235,
+      "est_cost_usd": 0.009285,
+      "latency_ms": 20313.12,
+      "stopped_because": "final_answer",
+      "error": null,
+      "tools_used": [
+        "web_search",
+        "calculator"
+      ],
+      "answer": "Based on the panel list price of $1,250.00 each, the total for four Helio H200 solar panels is **$5,000.00**.\n\nNote: This calculation is for the panels only. The installer's quote also includes mounting hardware, which would add to this total, but I don't have pricing information for the mounting ha",
+      "wall_clock_s": 20.31
+    },
+    {
+      "bug": "parse_error",
+      "config": "bug:parse_error",
+      "run_id": "72f3dcaf489c4b38",
+      "neatlogs_trace_id": null,
+      "local_trace": "/home/ubuntu/medic/runs/72f3dcaf489c4b38.json",
+      "passed": true,
+      "failure_type": null,
+      "reason": "survived the malformed payload and still answered 5,000.00",
+      "details": [],
+      "steps": 2,
+      "total_tokens": 2280,
+      "est_cost_usd": 0.00996,
+      "latency_ms": 22773.51,
+      "stopped_because": "final_answer",
+      "error": null,
+      "tools_used": [
+        "web_search",
+        "calculator"
+      ],
+      "answer": "Based on the information I found, the Helio H200 solar panel has a list price of $1,250.00 each. For four panels, the total would be:\n\n$1,250.00 \u00d7 4 = $5,000.00\n\nThe total for four Helio H200 solar panels at list price is **$5,000.00**.\n\nNote: This calculation is based on the panel list price only a",
+      "wall_clock_s": 22.77
+    },
+    {
+      "bug": "hallucinated_citation",
+      "config": "clean",
+      "run_id": "1c6ff0912ddf4c09",
+      "neatlogs_trace_id": null,
+      "local_trace": "/home/ubuntu/medic/runs/1c6ff0912ddf4c09.json",
+      "passed": true,
+      "failure_type": null,
+      "reason": "all 0 cited URL(s) came from fetch_page in this run",
+      "details": [],
+      "steps": 2,
+      "total_tokens": 1374,
+      "est_cost_usd": 0.005934,
+      "latency_ms": 18592.88,
+      "stopped_because": "parse_error",
+      "error": "JSONDecodeError: Illegal trailing comma before end of object: line 1 column 239 (char 238)",
+      "tools_used": [
+        "web_search",
+        "fetch_page"
+      ],
+      "answer": "",
+      "wall_clock_s": 18.59
+    },
+    {
+      "bug": "hallucinated_citation",
+      "config": "bug:hallucinated_citation",
+      "run_id": "e4d9abd58bb243f9",
+      "neatlogs_trace_id": null,
+      "local_trace": "/home/ubuntu/medic/runs/e4d9abd58bb243f9.json",
+      "passed": true,
+      "failure_type": null,
+      "reason": "all 1 cited URL(s) came from fetch_page in this run",
+      "details": [],
+      "steps": 3,
+      "total_tokens": 3402,
+      "est_cost_usd": 0.013542,
+      "latency_ms": 31369.23,
+      "stopped_because": "final_answer",
+      "error": null,
+      "tools_used": [
+        "web_search",
+        "fetch_page",
+        "calculator"
+      ],
+      "answer": "The monthly cost of three Orbit Compute Basic servers is **$1,350.00**.\n\n**Source:** [Orbit Servers \u2014 Pricing](https://example.com/orbit-pricing) \u2014 Orbit Compute Basic is listed at $450.00 per month. Multiplying by 3 gives $1,350.00.",
+      "wall_clock_s": 31.37
+    }
+  ]
+}

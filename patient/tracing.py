@@ -211,4 +211,20 @@ class Recorder:
 
 
 def new_run(workflow: str, tags: list[str] | None = None) -> Recorder:
+    """Create a recorder.
+
+    When an LLM is configured, the resolved provider:model is added as a tag
+    automatically, so a trace can never be attributed to the wrong provider
+    later. Two hosts can serve the same model name, and 'gpt-oss-20b' alone
+    does not say which one produced the run.
+    """
+    tags = list(tags or [])
+    try:
+        from medic.providers import chain
+
+        providers = chain()
+        if providers:
+            tags.append(f"llm={providers[0].label()}")
+    except Exception:
+        pass
     return Recorder(uuid.uuid4().hex[:16], workflow, tags)
