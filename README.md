@@ -14,6 +14,8 @@ Built for neatHack 2026 by **cipoklean**.
 ## 60-second quickstart
 
 ```bash
+python3 -m venv .venv && .venv/bin/pip install -r requirements.txt
+
 cp .env.example .env          # add NEATLOGS_API_KEY and an LLM key
 set -a && . ./.env && set +a  # so .env wins over any stale LLM_* in your shell
 
@@ -32,7 +34,7 @@ bash run.sh heal      # diagnose, diff, verify, verdict
 
 Without `LLM_MODEL_LITELLM_PATIENT` set, the patient falls back to the role
 default (`nova-lite`) and Medic also runs on `nova-lite` rather than Sonnet. The
-heal still works, but the costs above are measured with the patient pinned.
+heal still works, but the costs below are measured with the patient pinned.
 
 You will see a red failing run, a diagnosis naming the broken span, a one-line
 diff, a green re-run, a held-out results table, and the cost of the repair.
@@ -114,7 +116,7 @@ Unmodified `medic.yaml`, `nova-micro`, all 13 tasks x 3 runs. Zero misses:
 This is what every claim above rests on. It failed 4 of 13 the first time, and
 **three of those four were my harness, not the model.**
 
-### Recorded, not live: `loop` on Groq, Oct 10
+### Recorded, not live: `loop` on Groq, historical (Oct 10 2026)
 
 | | steps | tokens | result |
 |---|---|---|---|
@@ -125,9 +127,11 @@ This is what every claim above rests on. It failed 4 of 13 the first time, and
 Diagnosed at 0.92 confidence and patched with an explicit stop rule:
 [`evidence/real_heal_loop.json`](evidence/real_heal_loop.json).
 
-Labelled **"Groq, Oct 10"**. Groq left the chain because its free tier is
-200,000 tokens a day and one take costs about 36,000, which is four takes and no
-room to rehearse. The evidence is kept so the run stays reproducible.
+**This is a historical result from 2026-10-10, not a live claim.** Groq left the
+provider chain because its free tier is 200,000 tokens a day and one take costs
+about 36,000, which is four takes and no room to rehearse. The evidence is kept
+and labelled by date so the run stays reproducible:
+[`evidence/real_heal_loop.json`](evidence/real_heal_loop.json).
 
 ---
 
@@ -184,8 +188,18 @@ wires in `neatlogs doctor --local` and `--probe`.
 
 Every commit is a checkpoint pairing the diff with the session behind it.
 
-* Checkpoint: `01M4JB59S0C8NN6N28S7F24EYW`
-* URL: https://entire.io/gh/cipoklean/medic/commit/7f1a665ea156954369febc7dbc868c7c42455ba3
+* Checkpoint: `01M4JB59S0C8NN6N28S7F24EYW`, covering 14 commits up to `dccff63`
+* Checkpoint URL: https://entire.io/gh/cipoklean/medic/commit/dccff63f1ae86461fe87a50e60eb7b37191e2f06
+
+**That URL does not load yet.** Checked anonymously on 2026-10-10: it returns
+404, and entire.io itself serves a holding page reading "A new developer platform
+is coming". The old checkpoint URL returns 500. So the web viewer is not live for
+anyone, logged in or not. The checkpoint is real and inspectable locally:
+
+```bash
+entire checkpoint explain 01M4JB59S0C8NN6N28S7F24EYW
+entire checkpoint list
+```
 
 Hermes is not one of Entire's eight built-in agents, so I wrote an integration
 for it: [`tools/entire-agent-hermes`](tools/entire-agent-hermes). It implements
@@ -219,11 +233,17 @@ Input sheet: [`docs/cfo-ai-input.md`](docs/cfo-ai-input.md).
 * **One heal, one bug class, one host.** Medic healed `parse_error` on
   `nova-micro`. That is the whole live claim.
 * **A real model at temperature 0 is not bit-identical.** Two runs of the same
-  clean config on `laguna-s-2.1` took 3 and 4 steps. Every real-model figure here
-  is an observation from a small number of runs.
-* **`loop_strong` is a deliberately strengthened preset** so `laguna-s-2.1`
-  reproduces. The original `loop.yaml` does not reproduce on that model. Both are
-  in the repo so the difference is inspectable.
+  clean config on `nara/laguna-s-2.1` took 3 and 4 steps. Every real-model figure
+  here is an observation from a small number of runs. That probe ran on an earlier
+  provider, and the script has since been removed; the number stands as recorded
+  in [`evidence/loop_capability_matrix.json`](evidence/loop_capability_matrix.json).
+* **`loop_strong` is a deliberately strengthened preset**, built so
+  `nara/laguna-s-2.1` reproduced the loop bug. The original `loop.yaml` does not
+  reproduce on that model. This is an **earlier-provider result**: the probe
+  script was removed in the cleanup pass, and
+  [`evidence/repro_loop_strong_laguna.json`](evidence/repro_loop_strong_laguna.json)
+  is what backs it. Both presets stay in the repo so the difference is
+  inspectable.
 * **The medic cost dial is priced, not proven.** Only Sonnet has ever served a
   Medic call. `claude-haiku` and `nova-micro` are rate-card arithmetic, not
   results, and nobody has checked whether a smaller model diagnoses as
