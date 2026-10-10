@@ -1,0 +1,105 @@
+{
+  "note": "Real model, temperature 0, fixtures only. No preset tuning: whatever the model did is recorded as-is.",
+  "model_note": "see .env LLM_MODEL",
+  "results": [
+    {
+      "bug": "loop",
+      "config": "clean",
+      "run_id": "7f6e0275ceef43ee",
+      "neatlogs_trace_id": null,
+      "local_trace": "/home/ubuntu/medic/runs/7f6e0275ceef43ee.json",
+      "passed": true,
+      "failure_type": null,
+      "reason": "answered in 4 steps (limit 8)",
+      "details": [],
+      "steps": 4,
+      "total_tokens": 4004,
+      "est_cost_usd": 0.015072,
+      "latency_ms": 1964.47,
+      "stopped_because": "final_answer",
+      "error": null,
+      "tools_used": [
+        "web_search",
+        "fetch_page",
+        "calculator",
+        "calculator"
+      ],
+      "answer": "The total cost after the 12\u202f% volume discount is **$28,248.00**.",
+      "wall_clock_s": 1.97
+    },
+    {
+      "bug": "loop",
+      "config": "bug:loop",
+      "run_id": "fa9e54ab19db4a38",
+      "neatlogs_trace_id": null,
+      "local_trace": "/home/ubuntu/medic/runs/fa9e54ab19db4a38.json",
+      "passed": true,
+      "failure_type": null,
+      "reason": "answered in 5 steps (limit 8)",
+      "details": [],
+      "steps": 5,
+      "total_tokens": 5614,
+      "est_cost_usd": 0.021426,
+      "latency_ms": 8759.68,
+      "stopped_because": "final_answer",
+      "error": null,
+      "tools_used": [
+        "web_search",
+        "web_search",
+        "web_search",
+        "fetch_page",
+        "calculator"
+      ],
+      "answer": "The total cost after applying the 12\u202f% volume discount is **$28,248**.",
+      "wall_clock_s": 8.76
+    },
+    {
+      "bug": "wrong_args",
+      "config": "clean",
+      "run_id": "fb8b99c733564d6b",
+      "neatlogs_trace_id": null,
+      "local_trace": "/home/ubuntu/medic/runs/fb8b99c733564d6b.json",
+      "passed": true,
+      "failure_type": null,
+      "reason": "all 3 tool calls schema-valid and answer == 159.98",
+      "details": [],
+      "steps": 3,
+      "total_tokens": 2853,
+      "est_cost_usd": 0.010719,
+      "latency_ms": 19319.53,
+      "stopped_because": "final_answer",
+      "error": null,
+      "tools_used": [
+        "web_search",
+        "fetch_page",
+        "calculator"
+      ],
+      "answer": "Two blue gadgets from Gadget\u202fHub cost a total of **$159.98**.",
+      "wall_clock_s": 19.32
+    },
+    {
+      "bug": "wrong_args",
+      "config": "bug:wrong_args",
+      "run_id": "97a3b5ad72a547b8",
+      "neatlogs_trace_id": null,
+      "local_trace": "/home/ubuntu/medic/runs/97a3b5ad72a547b8.json",
+      "passed": true,
+      "failure_type": null,
+      "reason": "all 3 tool calls schema-valid and answer == 159.98",
+      "details": [],
+      "steps": 3,
+      "total_tokens": 2751,
+      "est_cost_usd": 0.010377,
+      "latency_ms": 16873.07,
+      "stopped_because": "final_answer",
+      "error": null,
+      "tools_used": [
+        "web_search",
+        "fetch_page",
+        "calculator"
+      ],
+      "answer": "Two blue gadgets from Gadget Hub cost a total of **$159.98**.",
+      "wall_clock_s": 16.87
+    }
+  ]
+}
