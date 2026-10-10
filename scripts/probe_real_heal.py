@@ -83,11 +83,17 @@ def baseline(bug: str, preset: str | None = None) -> dict:
 
 
 def main() -> int:
-    # argv: [bug] [preset]. Default stays loop for the recorded Groq evidence.
+    # argv: [bug] [preset] [label]. Default stays loop for the recorded Groq
+    # evidence. `label` is a free-form tag that only affects the OUTPUT FILENAME,
+    # so a second run of the same bug (different medic model, different patient)
+    # can be saved beside the first instead of overwriting it.
     bug = sys.argv[1] if len(sys.argv) > 1 else "loop"
     preset = sys.argv[2] if len(sys.argv) > 2 else None
+    label = sys.argv[3] if len(sys.argv) > 3 else None
     if preset:
         print(f"using strengthened preset: {preset}")
+    if label:
+        print(f"evidence label: {label}")
     live = init_tracing()
     print(f"neatlogs active: {live}")
     print("=" * 74)
@@ -183,8 +189,23 @@ def main() -> int:
         "clean_control": control,
         "heldout_task_ids": [t["id"] for t in heldout_for(bug)],
     }
-    suffix = f"_{preset}" if preset else f"_{bug}"
-    out = Path(__file__).resolve().parents[1] / "evidence" / f"real_heal_loop{suffix}.json"
+    # The medic model is part of the FILENAME. Two runs of the same bug that
+    # differ only in which model reasoned about it are different results, and a
+    # fixed name let the second silently replace the first: the Haiku run
+    # overwrote the Sonnet evidence and it had to be restored from git.
+    medic_model = ((outcome.attempts[0].llm_metrics or {}).get("model")
+                   if outcome.attempts else None) or "unknown-medic"
+    slug = medic_model.replace("/", "-").replace(".", "-").replace(":", "-")
+    parts = [f"real_heal_{bug}"]
+    if label:
+        parts.append(label)
+    elif preset:
+        parts.append(preset)
+    parts.append(slug)
+    out = Path(__file__).resolve().parents[1] / "evidence" / f"{'_'.join(parts)}.json"
+    if out.exists():
+        print(f"\n  REFUSING to overwrite {out.name}. Pass a different --preset/label.")
+        return 3
     out.write_text(json.dumps(report, indent=2, default=str))
     print(f"\nwrote {out}")
     print(f"\nHEALED: {outcome.healed}")
