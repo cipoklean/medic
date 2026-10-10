@@ -123,6 +123,14 @@ def main() -> int:
     failures += check_bugs_fail()
     print("→ same config must give the same run twice")
     failures += check_determinism()
+    print("→ every expected_answer is re-derivable from its fixtures")
+    try:
+        from tests import test_expectations
+
+        if test_expectations.main() != 0:
+            failures.append("task expectations do not match their fixtures")
+    except Exception as exc:
+        failures.append(f"expectation re-derivation failed to run: {exc}")
 
     reset_bug()
     if failures:

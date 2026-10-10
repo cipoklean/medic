@@ -1,80 +1,97 @@
-# HELD-OUT TASKS — never shown to Medic during diagnosis or patching.
-#
-# The point of these is that Medic's patch must generalise. If a fix only works
-# on the train task, the patch overfitted to one question and the demo is a lie.
-# Each bug gets 2-3 held-out tasks drawn from the SAME fixture corpus but
-# DIFFERENT pages, so the fix cannot be memorised.
-
 id: loop-solar
 bug: loop
-question: >-
-  A data centre wants four Helio H200 solar panels. What is the total panel cost
-  before mounting hardware? Use the calculator and give me the final number.
+question: A data centre wants four Helio H200 solar panels. What is the total panel cost before mounting
+  hardware? Use the calculator and give me the final number.
 expected_answer: 5000.0
 max_steps_allowed: 8
-
+expect:
+  from: helio_panel_price
+  unit: '1250'
+  qty: '4'
+  expr: Decimal(unit)*Decimal(qty)
 ---
 id: loop-gadgets
 bug: loop
-question: >-
-  Someone buys two blue gadgets. What do they cost in total before any
-  accessories? Use the calculator and give me the final number.
+question: Someone buys two blue gadgets. What do they cost in total before any accessories? Use the calculator
+  and give me the final number.
 expected_answer: 159.98
 max_steps_allowed: 8
-
+expect:
+  from: blue_gadget_price
+  unit: '79.99'
+  qty: '2'
+  expr: Decimal(unit)*Decimal(qty)
 ---
 id: wrong-args-loop
 bug: wrong_args
-question: >-
-  Orbit Compute Basic costs a monthly fee. What do three months cost in total?
-  Use the calculator and give me the final number.
+question: Orbit Compute Basic costs a monthly fee. What do three months cost in total? Use the calculator
+  and give me the final number.
 expected_answer: 1350.0
 max_steps_allowed: 8
-
+expect:
+  from: orbit_server_price
+  unit: '450'
+  qty: '3'
+  expr: Decimal(unit)*Decimal(qty)
 ---
 id: wrong-args-widgets
 bug: wrong_args
-question: >-
-  Re-price the ACME order of 250 widgets before the volume discount is applied.
-  Use the calculator and give me the final number.
+question: Re-price the ACME order of 250 widgets before the volume discount is applied. Use the calculator
+  and give me the final number.
 expected_answer: 32100.0
 max_steps_allowed: 8
-
+expect:
+  from: acme_widget_order
+  unit: '128.40'
+  qty: '250'
+  expr: Decimal(unit)*Decimal(qty)
 ---
 id: parse-error-gadgets
 bug: parse_error
-question: >-
-  Gadget Hub sells a blue gadget and a case together for $169.98. If the blue
-  gadget lists at $79.99, what does one case cost? Use the calculator and give
-  me the final number.
+question: Gadget Hub sells a blue gadget and a case together for $169.98. If the blue gadget lists at
+  $79.99, what does one case cost? Use the calculator and give me the final number.
 expected_answer: 89.99
 max_steps_allowed: 8
-
+expect:
+  from: blue_gadget_price
+  bundle: '169.98'
+  gadget: '79.99'
+  expr: Decimal(bundle)-Decimal(gadget)
 ---
 id: parse-error-widgets
 bug: parse_error
-question: >-
-  Widget Corp lists a unit at $128.40. What does one unit cost in cents? Use the
-  calculator and give me the final number.
+question: Widget Corp lists a unit at $128.40. What does one unit cost in cents? Use the calculator and
+  give me the final number.
 expected_answer: 12840.0
 max_steps_allowed: 8
-
+expect:
+  from: widget_price
+  unit: '128.40'
+  qty: '100'
+  expr: Decimal(unit)*Decimal(qty)
 ---
 id: hallucinated-citation-solar
 bug: hallucinated_citation
-question: >-
-  What is the list price of one Helio H200 panel? Cite the page you used with
-  its URL, and give me the final number.
+question: What is the list price of one Helio H200 panel? Cite the page you used with its URL, and give
+  me the final number.
 expected_answer: 1250.0
 max_steps_allowed: 8
 check: citations_must_be_fetched
-
+expect:
+  from: helio_panel_price
+  unit: '1250'
+  qty: '1'
+  expr: Decimal(unit)*Decimal(qty)
 ---
 id: hallucinated-citation-widgets
 bug: hallucinated_citation
-question: >-
-  What is the standard list price of one widget before any bulk discount? Cite
-  the page you used with its URL, and give me the final number.
+question: What is the standard list price of one widget before any bulk discount? Cite the page you used
+  with its URL, and give me the final number.
 expected_answer: 128.4
 max_steps_allowed: 8
 check: citations_must_be_fetched
+expect:
+  from: widget_price
+  unit: '128.40'
+  qty: '1'
+  expr: Decimal(unit)*Decimal(qty)
