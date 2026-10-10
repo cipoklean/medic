@@ -132,9 +132,16 @@ saw. Both claims are real; they attach to different bugs.
 Assumptions, stated so they can be challenged:
 
 * 20 heals/team/month, all on one provider tier.
-* Inference at 30k tokens/heal → $0.11–0.17/heal → **$2–3.40/team/month**.
+* Inference at **$0.009426/heal (MEASURED)** → **$0.19/team/month**.
+  *(Superseded: this section previously carried $0.11–0.17/heal from the earlier
+  Groq-based measurement. The live heal on Bedrock measured $0.009426 — 12–18×
+  lower. See §4.)*
 * Hosting and storage of traces and reports: assumed $0.50/team/month.
-* Gross margin ≈ **85–95%** at $49/mo.
+* Gross margin ≈ **98.6%** at $49/mo.
+
+At the measured cost, inference is **under 1% of revenue** at every tier. That is
+the single most important number in this document: the product is verification
+and history, not tokens.
 
 The cost structure is unusually favourable: **the expensive part of the product
 is verification (running train + held-out tasks), not model inference.** That is
@@ -167,9 +174,9 @@ Stated plainly, because a plan that cannot fail is not a plan:
   already enough for a competent engineer, Medic is a toy. Mitigation: the value
   is the *held-out proof*, which is what stops a config "fix" from working on one
   task and silently breaking others.
-* **Provider cost.** 30k tokens/heal is cheap, but a frontier-model default
-  would put a heal at ~$1.50. Per-healed-trace pricing absorbs that; per-seat
-  alone would not.
+* **Provider cost.** A heal is $0.0094 measured on Sonnet, but a frontier-model
+  default would raise the medic share materially — **assumption, not measured**.
+  Per-healed-trace pricing absorbs that; per-seat alone would not.
 * **A platform fixes it.** If neatlogs or a CI vendor ships auto-patching with
   verification built in, the wedge narrows to "bring your own agent and your own
   checks" — which is the stated path to using Medic, so the business survives the
