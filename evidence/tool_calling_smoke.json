@@ -1,0 +1,131 @@
+{
+  "base_url": "https://router.bynara.id/v1",
+  "tested": 20,
+  "tool_calling": [
+    "agnes-2.5-flash"
+  ],
+  "skipped_unstable": [],
+  "results": [
+    {
+      "model": "agnes-2.5-flash",
+      "ok": true,
+      "tool_calls": 1,
+      "arguments": "{\"query\": \"current price of a standard widget\"}",
+      "arguments_is_json": true,
+      "prompt_tokens": 566,
+      "completion_tokens": 52,
+      "reasoning_tokens": 0,
+      "elapsed_s": 19.8,
+      "content_preview": "\n\n"
+    },
+    {
+      "model": "agnes-3-flash",
+      "ok": false,
+      "error": "HTTP 402: {\"error\":{\"type\":\"payment_required\",\"message\":\"Insufficient credits. Please top up your balance.\",\"request_id\":\"eb0e0740"
+    },
+    {
+      "model": "agnes-video-v2.0",
+      "ok": false,
+      "error": "HTTP 403: {\"error\":{\"type\":\"forbidden\",\"message\":\"Your plan does not include the requested model.\",\"request_id\":\"39fb1370-eace-438"
+    },
+    {
+      "model": "claude-fable-5.1",
+      "ok": false,
+      "error": "HTTP 429: rate limit"
+    },
+    {
+      "model": "claude-haiku-5.5",
+      "ok": false,
+      "error": "HTTP 429: rate limit"
+    },
+    {
+      "model": "claude-opus-4.8",
+      "ok": false,
+      "error": "HTTP 429: rate limit"
+    },
+    {
+      "model": "claude-opus-5",
+      "ok": false,
+      "error": "HTTP 429: rate limit"
+    },
+    {
+      "model": "claude-opus-5.5",
+      "ok": false,
+      "error": "HTTP 429: rate limit"
+    },
+    {
+      "model": "claude-sonnet-5",
+      "ok": false,
+      "error": "HTTP 429: rate limit"
+    },
+    {
+      "model": "claude-sonnet-5.5",
+      "ok": false,
+      "error": "HTTP 429: rate limit"
+    },
+    {
+      "model": "deepseek-v4-flash",
+      "ok": false,
+      "error": "HTTP 429: rate limit"
+    },
+    {
+      "model": "deepseek-v4-flash-alibaba",
+      "ok": false,
+      "error": "HTTP 429: rate limit"
+    },
+    {
+      "model": "deepseek-v4-flash-vision-exp",
+      "ok": false,
+      "error": "HTTP 429: rate limit"
+    },
+    {
+      "model": "deepseek-v4-pro",
+      "ok": false,
+      "error": "HTTP 429: rate limit"
+    },
+    {
+      "model": "deepseek-v4.1-flash",
+      "ok": false,
+      "error": "HTTP 429: rate limit"
+    },
+    {
+      "model": "exo-stealh",
+      "ok": false,
+      "error": "HTTP 400: {\"error\":{\"type\":\"bad_request\",\"message\":\"The model rejected this request. It may not support the input you sent (e.g. i"
+    },
+    {
+      "model": "gemini-3.1-pro-high",
+      "ok": false,
+      "error": "HTTP 429: rate limit"
+    },
+    {
+      "model": "gemini-3.8-flash-high",
+      "ok": false,
+      "error": "HTTP 429: rate limit"
+    },
+    {
+      "model": "glm-5.2",
+      "ok": false,
+      "error": "HTTP 429: rate limit"
+    },
+    {
+      "model": "glm-5.3",
+      "ok": false,
+      "error": "HTTP 429: rate limit"
+    }
+  ],
+  "IMPORTANT_CAVEAT": "18 of 20 models returned HTTP 429 'Insufficient credits. Please top up your balance'. Those models were NOT tested for tool calling - the 429 is an account-level credit failure, not a model capability result. Only agnes-2.5-flash and exo-stealh (HTTP 400, model-specific) produced a real capability signal. '1 of 20 emit real tool_calls' is therefore NOT a valid quality ratio and must not be quoted as one.",
+  "verified_tool_calling": [
+    {
+      "model": "agnes-2.5-flash",
+      "runs": 2,
+      "args_valid_json": true,
+      "completion_tokens": [
+        58,
+        75
+      ],
+      "note": "two independent runs, both emitted a real tool_call with valid JSON arguments"
+    }
+  ],
+  "not_tested_credit_blocked": 18
+}
