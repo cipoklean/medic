@@ -196,8 +196,8 @@ is down, so a heal never dies because a vendor is. `cli.py doctor` wires in
 
 Every commit is a checkpoint pairing the diff with the session behind it.
 
-* Checkpoint: `01M4JB59S0C8NN6N28S7F24EYW`, covering 14 commits up to `dccff63`
-* Checkpoint URL: https://entire.io/gh/cipoklean/medic/commit/dccff63f1ae86461fe87a50e60eb7b37191e2f06
+* Checkpoint: `01M4JB59S0C8NN6N28S7F24EYW`, covering every commit up to `2e73dc5`
+* Checkpoint URL: https://entire.io/gh/cipoklean/medic/commit/2e73dc5aec0436b556e1adab039fcfca5d868be3
 
 **That URL does not load yet** (404, and entire.io serves a holding page). The web
 viewer is not live for anyone. The checkpoint is real and inspectable locally with
