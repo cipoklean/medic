@@ -1,0 +1,83 @@
+{
+  "question": "Do the page-only held-out tasks fire the bug, and does the patch hold?",
+  "model": "nova-micro",
+  "tasks": [
+    "parse-error-vertex",
+    "parse-error-kestrel"
+  ],
+  "runs": [
+    {
+      "task_id": "parse-error-vertex",
+      "phase": "buggy",
+      "passed": false,
+      "failure_type": "parse_error",
+      "reason": "run ended on an unhandled parse error: JSONDecodeError: Illegal trailing comma before end of object: line 1 column 421 (char 420)",
+      "parse_err_seen": true,
+      "steps": 2,
+      "total_tokens": 2006,
+      "tools": [
+        "web_search",
+        "fetch_page"
+      ],
+      "answer": "",
+      "run_id": "8139253f09684e8d",
+      "neatlogs_trace_id": null
+    },
+    {
+      "task_id": "parse-error-kestrel",
+      "phase": "buggy",
+      "passed": false,
+      "failure_type": "parse_error",
+      "reason": "run ended on an unhandled parse error: JSONDecodeError: Illegal trailing comma before end of object: line 1 column 386 (char 385)",
+      "parse_err_seen": true,
+      "steps": 2,
+      "total_tokens": 1973,
+      "tools": [
+        "web_search",
+        "fetch_page"
+      ],
+      "answer": "",
+      "run_id": "342a3e429c2d4fe1",
+      "neatlogs_trace_id": null
+    },
+    {
+      "task_id": "parse-error-vertex",
+      "phase": "healed",
+      "passed": true,
+      "failure_type": null,
+      "reason": "survived the malformed payload and still answered 603.75",
+      "parse_err_seen": true,
+      "steps": 3,
+      "total_tokens": 4772,
+      "tools": [
+        "web_search",
+        "fetch_page",
+        "calculator"
+      ],
+      "answer": "The total monthly cost for provisioning seven units on the Vertex Storage Fleet plan is calculated to be $603.75.\n\nHere is the full URL of t",
+      "run_id": "be75b8b28db34fcc",
+      "neatlogs_trace_id": null
+    },
+    {
+      "task_id": "parse-error-kestrel",
+      "phase": "healed",
+      "passed": true,
+      "failure_type": null,
+      "reason": "survived the malformed payload and still answered 3,820.80",
+      "parse_err_seen": true,
+      "steps": 3,
+      "total_tokens": 4760,
+      "tools": [
+        "web_search",
+        "fetch_page",
+        "calculator"
+      ],
+      "answer": "The total freight cost for twelve pallets on the Kestrel Freight lane to Rotterdam is calculated to be $3,820.80.\n\n<b>Citation:</b>\nhttps://",
+      "run_id": "3cd819877522418c",
+      "neatlogs_trace_id": null
+    }
+  ],
+  "bug_fires_on_buggy": true,
+  "patch_holds_on_healed": true,
+  "disclosure": "These two tasks are verification only and are never shown to diagnose or surgeon. Their figures exist solely on the page fixture, so the agent must call fetch_page - which is where the malformed JSON lives. The two ORIGINAL held-out tasks are kept unchanged; they state their figures in the question, so they do not exercise this bug and passing them does not prove the patch."
+}
