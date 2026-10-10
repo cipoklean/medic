@@ -104,17 +104,40 @@ class PatientAgent:
         except Exception:
             return llm_settings()["model"]
 
+    def _seed_kwarg(self) -> dict:
+        """`seed` for providers that accept it, nothing for those that don't.
+
+        Bedrock (which the LiteLLM gateway fronts) returns 400 on `seed`. Since
+        temperature=0 already makes the run as deterministic as the provider
+        allows, dropping it costs nothing and keeps the probe alive.
+        """
+        if os.environ.get("MEDIC_DROP_UNSUPPORTED", "1") == "0":
+            return {"seed": 7}
+        return {}
+
     def _max_tokens(self) -> int:
         """Cap the per-call completion budget so a run stays affordable.
 
-        MEDIC_MAX_TOKENS (default 16384) — measured safe on OpenRouter: unset,
-        OpenRouter reserves 65,536 and rejects on insufficient credit; 16,384
-        runs fine and costs $0.000021 per small call.
+        Two different limits bind here, and both were found by hitting them:
+
+          * unset, OpenRouter reserves the model's full advertised ceiling
+            (65,536) and rejects on insufficient credit — 402.
+          * nova-lite on Bedrock refuses anything above 10,000 — 400
+            'exceeds the model limit of 10000'.
+
+        So MEDIC_MAX_TOKENS is a REQUEST, clamped down to the model's own limit
+        when we know it. Clamping rather than trusting the request is what makes
+        the same .env work across hosts.
         """
         try:
-            return int(os.environ.get("MEDIC_MAX_TOKENS", "16384"))
+            wanted = int(os.environ.get("MEDIC_MAX_TOKENS", "16384"))
         except ValueError:
-            return 16384
+            wanted = 16384
+        limit = _MODEL_MAX_TOKENS.get(self._model_name())
+        if limit:
+            return min(wanted, limit)
+        return wanted
+
 
     def _provider_routing(self) -> dict | None:
         """Upstream pinning, when the resolved provider configures it.
@@ -220,7 +243,15 @@ class PatientAgent:
                         messages=messages,
                         tools=tools,
                         temperature=0,
-                        seed=7,
+                        # `seed` is an OpenAI parameter, not a universal one:
+                        # Bedrock rejects it with 'does not support parameters:
+                        # [seed]'. Providers differ in which knobs they accept,
+                        # so an unsupported one is dropped and the run
+                        # continues, rather than failing a whole probe on a
+                        # parameter the model never needed. Set
+                        # MEDIC_DROP_UNSUPPORTED=0 to make it a hard error
+                        # instead, if you want strict parameter parity.
+                        **(self._seed_kwarg()),
                     )
                     usage = getattr(resp, "usage", None)
                     p_tok = getattr(usage, "prompt_tokens", 0) or 0
@@ -345,3 +376,13 @@ class PatientAgent:
 def run_patient(question: str, recorder, config: dict | None = None) -> RunResult:
     agent = PatientAgent(config or load_config())
     return agent.run(question, recorder)
+
+
+# Per-model completion ceilings, verified by the error each one returned.
+# An entry here is a measured limit, not a guess.
+_MODEL_MAX_TOKENS = {
+    "nova-lite": 10000,
+    "nova-micro": 10000,
+    "nova-pro": 10000,
+    "nova-2-lite": 10000,
+}

@@ -1,0 +1,14 @@
+{
+  "question": "Which Gemini model should the fallback pin, and does it call tools?",
+  "base_url": "https://generativelanguage.googleapis.com/v1beta/openai",
+  "reachable_models": 0,
+  "flash_models_available": [],
+  "probed": {
+    "gemini-2.5-flash": {
+      "status": "HTTP 404",
+      "detail": "[{\n  \"error\": {\n    \"code\": 404,\n    \"message\": \"This model models/gemini-2.5-flash is no longer available to new users. Please update your code to use models/g"
+    }
+  },
+  "recommended": null,
+  "disclosure": "Only a model with status PASS is verified to emit tool_calls. gemini-2.5-flash was probed explicitly and is NOT assumed to work."
+}

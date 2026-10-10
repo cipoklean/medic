@@ -1,0 +1,108 @@
+{
+  "question": "Which gateway models emit real tool_calls for a tool-using prompt?",
+  "gateway": "https://litellm.vision.aivar.app/v1",
+  "probed": 7,
+  "passed": [
+    "nova-micro",
+    "nova-lite",
+    "nova-pro",
+    "nova-2-lite",
+    "claude-haiku",
+    "claude-sonnet-4.6",
+    "claude-opus-4.6"
+  ],
+  "not_passed": [],
+  "results": {
+    "nova-micro": {
+      "status": "PASS",
+      "tools_called": [
+        "calculator",
+        "calculator",
+        "calculator"
+      ],
+      "arguments_valid_json": true,
+      "arguments": "{\"expression\": \"250 * 128.4\"}",
+      "finish_reason": "tool_calls",
+      "prompt_tokens": 526,
+      "completion_tokens": 222,
+      "provider": null
+    },
+    "nova-lite": {
+      "status": "PASS",
+      "tools_called": [
+        "calculator",
+        "calculator"
+      ],
+      "arguments_valid_json": true,
+      "arguments": "{\"expression\": \"250 * 128.40\"}",
+      "finish_reason": "tool_calls",
+      "prompt_tokens": 526,
+      "completion_tokens": 91,
+      "provider": null
+    },
+    "nova-pro": {
+      "status": "PASS",
+      "tools_called": [
+        "calculator",
+        "calculator"
+      ],
+      "arguments_valid_json": true,
+      "arguments": "{\"expression\": \"250 * 128.40\"}",
+      "finish_reason": "tool_calls",
+      "prompt_tokens": 526,
+      "completion_tokens": 111,
+      "provider": null
+    },
+    "nova-2-lite": {
+      "status": "PASS",
+      "tools_called": [
+        "calculator"
+      ],
+      "arguments_valid_json": true,
+      "arguments": "{\"expression\": \"250 * 128.40\"}",
+      "finish_reason": "tool_calls",
+      "prompt_tokens": 1027,
+      "completion_tokens": 30,
+      "provider": null
+    },
+    "claude-haiku": {
+      "status": "PASS",
+      "tools_called": [
+        "calculator",
+        "calculator"
+      ],
+      "arguments_valid_json": true,
+      "arguments": "{\"expression\": \"250 * 128.40\"}",
+      "finish_reason": "tool_calls",
+      "prompt_tokens": 702,
+      "completion_tokens": 119,
+      "provider": null
+    },
+    "claude-sonnet-4.6": {
+      "status": "PASS",
+      "tools_called": [
+        "calculator",
+        "calculator"
+      ],
+      "arguments_valid_json": true,
+      "arguments": "{\"expression\": \"250 * 128.40\"}",
+      "finish_reason": "tool_calls",
+      "prompt_tokens": 703,
+      "completion_tokens": 133,
+      "provider": null
+    },
+    "claude-opus-4.6": {
+      "status": "PASS",
+      "tools_called": [
+        "calculator"
+      ],
+      "arguments_valid_json": true,
+      "arguments": "{\"expression\": \"250 * 128.40\"}",
+      "finish_reason": "tool_calls",
+      "prompt_tokens": 703,
+      "completion_tokens": 80,
+      "provider": null
+    }
+  },
+  "disclosure": "Only models in `passed` are verified to call tools. A model listed in not_passed either errored or answered in prose; it was NOT tuned and is not reported as working. Any model not in `probed` is untested."
+}

@@ -30,8 +30,10 @@ from tasks.loader import train_task_for
 
 def main() -> int:
     ap = argparse.ArgumentParser()
-    ap.add_argument("--bug", default="loop_strong")
+    ap.add_argument("--bug", default="loop")
     ap.add_argument("--runs", type=int, default=3)
+    ap.add_argument("--max-steps", type=int, default=15,
+                    help="hard step cap; hitting it counts as reproduced")
     ap.add_argument("--needed", type=int, default=2,
                     help="stop once this many runs FAIL (i.e. reproduce)")
     ap.add_argument("--out", default="evidence/repro_loop_strong_laguna.json")
@@ -56,7 +58,8 @@ def main() -> int:
         rec = tracing.new_run("patient-agent",
                               tags=[f"bug={bug_key}", f"preset={args.bug}",
                                     f"probe_run={i}", "llm=real"])
-        result = run_once(task["question"], rec, config, mode="real")
+        result = run_once(task["question"], rec, config, mode="real",
+                          max_steps=args.max_steps)
         verdict = run_checks(bug_key, task, result)
         m = measured(result, rec)
         rec.write({"result": result.to_dict(), "bug": bug_key, "task_id": task["id"],
@@ -93,7 +96,7 @@ def main() -> int:
     reset_bug()
     reliable = failures >= args.needed
     report = {
-        "question": f"Does the STRENGTHENED loop preset reproduce on {args.bug}?",
+        "question": f"Does the loop preset reproduce as the patient? (guardrails: {args.max_steps} steps, 30k tokens)",
         "preset": args.bug,
         "model": "nara/laguna-s-2.1",
         "hard_check": bug_key,

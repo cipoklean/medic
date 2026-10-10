@@ -105,9 +105,65 @@
       "reproduces": true,
       "note": "Reproduced 2 of 2 runs (stopped at the threshold). Uses the STRENGTHENED preset bugs/presets/loop_strong.yaml - the original loop.yaml does NOT reproduce on this model. 37-38 of the 40 steps are web_search. A clean laguna run costs ~5,000 tokens, so the buggy run is 20-36x the cost of a healthy one.",
       "measured": "2026-10-10, evidence/repro_loop_strong_laguna.json"
+    },
+    {
+      "model": "nova-lite",
+      "provider": "litellm (bedrock)",
+      "preset": "loop (original)",
+      "clean": {
+        "passed": true,
+        "steps": "2",
+        "tokens": "3,065-3,066"
+      },
+      "buggy": {
+        "passed": true,
+        "steps": "2",
+        "tokens": "3,065-3,066"
+      },
+      "reproduces": false,
+      "note": "0 of 3. Answers correctly in 2 steps on both the clean and buggy config - the most reliable model tested. This is why nova-lite is the ROLE default for the patient: it does what it is told.",
+      "measured": "2026-10-10, evidence/repro_nova_loop.json"
+    },
+    {
+      "model": "nova-micro",
+      "provider": "litellm (bedrock)",
+      "preset": "loop (original)",
+      "clean": {
+        "passed": true,
+        "steps": "2",
+        "tokens": "~3,066"
+      },
+      "buggy": {
+        "passed": false,
+        "steps": "6",
+        "tokens": "5,228",
+        "failure_type": "wrong_args"
+      },
+      "reproduces": true,
+      "note": "2 of 2 runs. IMPORTANT: this is NOT a loop. It finished in 6 steps, under the limit of 8, and produced a wrong number - the wrong_args fault. The loop check initially labelled it 'loop' and the relabel is recorded here: a wrong number from a bounded run is a wrong-args fault, and calling it a loop would send Medic to patch max_steps, a confident fix to a problem that was never there. Most reproducible model on the original preset.",
+      "measured": "2026-10-10, evidence/repro_nova_loop.json"
+    },
+    {
+      "model": "nova-2-lite",
+      "provider": "litellm (bedrock)",
+      "preset": "loop (original)",
+      "clean": {
+        "passed": true,
+        "steps": "4",
+        "tokens": "6,244"
+      },
+      "buggy": {
+        "passed": false,
+        "steps": "0",
+        "tokens": "1,335-1,340",
+        "failure_type": "wrong_args"
+      },
+      "reproduces": true,
+      "note": "2 of 3 runs, same wrong_args fault as nova-micro and never a loop. Two of the three runs answered in ZERO tool calls - it went straight to a wrong final number without searching at all, which is a different failure again from either a loop or a bad argument.",
+      "measured": "2026-10-10, evidence/repro_nova_loop.json"
     }
   ],
-  "finding": "The buggy prompt reliably costs these models one extra search and 400-1,400 extra tokens \u2014 the budget pressure is visible \u2014 but none of them runs away. gpt-oss-20b is the only one that exceeds the step limit, by 50%. The SAME model name on a DIFFERENT host fails differently: 12-step overrun on groq, single empty response on openrouter. Pinned routing to the same upstream still changed the outcome (12 steps FAIL direct, 7 steps PASS via OpenRouter), so the route is part of the system under test.",
+  "finding": "The buggy prompt reliably costs these models one extra search and 400-1,400 extra tokens \u2014 the budget pressure is visible \u2014 but none of them runs away. gpt-oss-20b is the only one that exceeds the step limit, by 50%. The SAME model name on a DIFFERENT host fails differently: 12-step overrun on groq, single empty response on openrouter. Pinned routing to the same upstream still changed the outcome (12 steps FAIL direct, 7 steps PASS via OpenRouter), so the route is part of the system under test. The nova models reproduce the original loop preset as a WRONG-ARGS fault, not a loop: bounded runs with wrong numbers. The loop check was mislabelling them, and the relabel is in the evidence.",
   "interpretation": "This is a capability difference, not a fluke. A model that keeps re-searching despite an explicit licence to stop has weaker instruction-following on termination. It does NOT mean the loop bug is fake: it reproduces on the one model tested that misbehaves, it reproduces deterministically with the scripted agent, and a real deployment would run a spread of models including weaker ones.",
   "consequence_for_the_demo": "The demo needs a genuine, REPRODUCIBLE failure. groq gives a 12-step overrun that is easy to show and easy to fix (6 steps after). OpenRouter's empty response is also a real fault but is a worse demo: it ends in one step, so there is no visible runaway behaviour, and it may not recur on every run. Use groq for the demo take; keep openrouter as the same-model fallback for when groq's daily budget is exhausted, and be explicit on camera about which provider served the run.",
   "cost_of_this_choice": "Groq's free tier is 200,000 tokens/day and a looping run alone costs ~23,000 of it. A single demo day of rehearsals could exhaust the budget. This is the single largest demo-day risk and is recorded as such.",

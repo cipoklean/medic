@@ -165,6 +165,23 @@ def check_parse_error(task: dict, result) -> Verdict:
     )
 
 
+def _called_with_bad_args(result) -> bool:
+    """Did any tool call pass prose where an expression was required?
+
+    Evidence for the diagnosis, not a gate: a wrong number plus a prose argument
+    points squarely at the tool DESCRIPTION rather than at anything else in the
+    config, which is the difference between a one-line fix and a guess.
+    """
+    import re
+
+    for step in getattr(result, "steps", []) or []:
+        args = (getattr(step, "arguments", None) or {})
+        expr = str(args.get("expression", "")).strip()
+        if expr and not re.fullmatch(r"[0-9eE+\-*/().,%\s]+", expr):
+            return True
+    return False
+
+
 def check_loop(task: dict, result) -> Verdict:
     """Finishes within max_steps_allowed WITH a final answer."""
     limit = int(task["max_steps_allowed"])
@@ -229,11 +246,26 @@ def check_loop(task: dict, result) -> Verdict:
 
     expected = float(task["expected_answer"])
     if round(expected, 2) not in _numbers_in(result.answer):
+        # NOT a loop. The agent finished inside its budget and produced a wrong
+        # number, which is the wrong_args fault. Labelling this "loop" would
+        # send Medic to patch max_steps or add a stop rule — a confident fix to
+        # a problem that was never there, on a run that would then still fail.
+        #
+        # The loop check runs on this task, so it has to name the real cause.
+        tool_bad = _called_with_bad_args(result)
         return Verdict(
             passed=False,
-            reason=f"finished under the step limit but the answer is wrong ({expected:,.2f} expected)",
-            details=[f"answer was: {result.answer[:200]}"],
-            failure_type="loop",
+            reason=(
+                f"finished in {len(result.steps)} steps (under the limit of "
+                f"{limit}) but answered wrong ({expected:,.2f} expected)"
+            ),
+            details=[
+                f"answer was: {result.answer[:200]}",
+                "this is not a runaway — the agent stopped on its own",
+                "a wrong number from a bounded run is a wrong-args fault"
+                + ("; a tool was called with a non-expression argument" if tool_bad else ""),
+            ],
+            failure_type="wrong_args",
             metrics=metrics,
         )
 

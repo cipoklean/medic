@@ -1,0 +1,37 @@
+{
+  "claude-haiku": {
+    "input_per_mtok": 1.1e-06,
+    "output_per_mtok": 5.5e-06,
+    "upstream": "us.anthropic.claude-haiku-4-5-20251001-v1:0"
+  },
+  "claude-sonnet-4.6": {
+    "input_per_mtok": 3.3e-06,
+    "output_per_mtok": 1.65e-05,
+    "upstream": "us.anthropic.claude-sonnet-4-6"
+  },
+  "claude-opus-4.6": {
+    "input_per_mtok": 5.5e-06,
+    "output_per_mtok": 2.75e-05,
+    "upstream": "us.anthropic.claude-opus-4-6-v1"
+  },
+  "nova-micro": {
+    "input_per_mtok": 3.5e-08,
+    "output_per_mtok": 1.4e-07,
+    "upstream": "us.amazon.nova-micro-v1:0"
+  },
+  "nova-lite": {
+    "input_per_mtok": 6e-08,
+    "output_per_mtok": 2.4e-07,
+    "upstream": "us.amazon.nova-lite-v1:0"
+  },
+  "nova-pro": {
+    "input_per_mtok": 8e-07,
+    "output_per_mtok": 3.2e-06,
+    "upstream": "us.amazon.nova-pro-v1:0"
+  },
+  "nova-2-lite": {
+    "input_per_mtok": 3.3e-07,
+    "output_per_mtok": 2.75e-06,
+    "upstream": "us.amazon.nova-2-lite-v1:0"
+  }
+}

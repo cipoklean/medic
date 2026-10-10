@@ -1,0 +1,126 @@
+{
+  "question": "Which nova model reproduces the ORIGINAL loop preset as the patient?",
+  "guardrails": {
+    "max_steps": 15,
+    "token_ceiling": 30000,
+    "needed_to_count": 2
+  },
+  "preset": "loop (original, unmodified \u2014 loop_strong NOT used)",
+  "models": {
+    "nova-lite": {
+      "runs": [
+        {
+          "run": 1,
+          "reproduced": false,
+          "failure_type": null,
+          "reason": "answered in 2 steps (limit 8)",
+          "steps": 2,
+          "total_tokens": 3066,
+          "stopped_because": "final_answer",
+          "run_id": "eca4d9b2fbb04483",
+          "neatlogs_trace_id": null
+        },
+        {
+          "run": 2,
+          "reproduced": false,
+          "failure_type": null,
+          "reason": "answered in 2 steps (limit 8)",
+          "steps": 2,
+          "total_tokens": 3065,
+          "stopped_because": "final_answer",
+          "run_id": "67749700a6e44233",
+          "neatlogs_trace_id": null
+        },
+        {
+          "run": 3,
+          "reproduced": false,
+          "failure_type": null,
+          "reason": "answered in 2 steps (limit 8)",
+          "steps": 2,
+          "total_tokens": 3065,
+          "stopped_because": "final_answer",
+          "run_id": "9acf0d47c6da4f5e",
+          "neatlogs_trace_id": null
+        }
+      ],
+      "reproductions": 0,
+      "reliable": false,
+      "preset": "loop (original, unmodified)"
+    },
+    "nova-micro": {
+      "runs": [
+        {
+          "run": 1,
+          "reproduced": true,
+          "failure_type": "wrong_args",
+          "reason": "finished in 6 steps (under the limit of 8) but answered wrong (28,248.00 expected)",
+          "steps": 6,
+          "total_tokens": 5228,
+          "stopped_because": "final_answer",
+          "run_id": "58eed738156d4786",
+          "neatlogs_trace_id": null
+        },
+        {
+          "run": 2,
+          "reproduced": true,
+          "failure_type": "wrong_args",
+          "reason": "finished in 6 steps (under the limit of 8) but answered wrong (28,248.00 expected)",
+          "steps": 6,
+          "total_tokens": 5228,
+          "stopped_because": "final_answer",
+          "run_id": "1b237cadc7524c2c",
+          "neatlogs_trace_id": null
+        }
+      ],
+      "reproductions": 2,
+      "reliable": true,
+      "preset": "loop (original, unmodified)"
+    },
+    "nova-2-lite": {
+      "runs": [
+        {
+          "run": 1,
+          "reproduced": true,
+          "failure_type": "wrong_args",
+          "reason": "finished in 0 steps (under the limit of 8) but answered wrong (28,248.00 expected)",
+          "steps": 0,
+          "total_tokens": 1340,
+          "stopped_because": "final_answer",
+          "run_id": "587e0695504f4a60",
+          "neatlogs_trace_id": null
+        },
+        {
+          "run": 2,
+          "reproduced": false,
+          "failure_type": null,
+          "reason": "answered in 4 steps (limit 8)",
+          "steps": 4,
+          "total_tokens": 6244,
+          "stopped_because": "final_answer",
+          "run_id": "ff707e23cbb14300",
+          "neatlogs_trace_id": null
+        },
+        {
+          "run": 3,
+          "reproduced": true,
+          "failure_type": "wrong_args",
+          "reason": "finished in 0 steps (under the limit of 8) but answered wrong (28,248.00 expected)",
+          "steps": 0,
+          "total_tokens": 1335,
+          "stopped_because": "final_answer",
+          "run_id": "15a2d00746974a2e",
+          "neatlogs_trace_id": null
+        }
+      ],
+      "reproductions": 2,
+      "reliable": true,
+      "preset": "loop (original, unmodified)"
+    }
+  },
+  "most_reliable": "nova-micro",
+  "reliable_models": [
+    "nova-micro",
+    "nova-2-lite"
+  ],
+  "disclosure": "Only models reproducing 2 of 2 runs are called reliable. The original preset was NOT strengthened for this probe; if nothing reproduced, that is reported as a non-reproduction, not as grounds to switch presets."
+}
