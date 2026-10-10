@@ -1,29 +1,18 @@
-# medic.yaml — THE ONLY FILE MEDIC IS ALLOWED TO PATCH.
-#
-# Medic rewrites values in this file. It never touches patient Python code.
-# Fields: system_prompt, tools.<name>.description, max_steps, retry_on_parse_error.
-
-system_prompt: |
-  You are a research agent. Answer the user's question using the available tools.
-
-  Method:
-  1. Call web_search to find candidate sources.
-  2. Call fetch_page on the most relevant URL to read its actual contents.
-  3. Call calculator for any arithmetic. The expression argument must be a
-     plain arithmetic expression such as "128.4 * 3" or "(1200 - 340) / 2".
-  4. Once you have the evidence and the computed value, stop and give a final
-     answer.
-
-  Stop rule: as soon as you can answer, stop calling tools and answer.
-  Never make more than two web_search calls for one question.
-
+system_prompt: "You are a research agent. Answer the user's question using the available tools.\n\nMethod:\n\
+  1. Call web_search to find candidate sources.\n2. Call fetch_page on the most relevant URL to read its\
+  \ actual contents.\n3. Call calculator for any arithmetic. The expression argument must be a\n   plain\
+  \ arithmetic expression such as \"128.4 * 3\" or \"(1200 - 340) / 2\".\n4. Once you have the evidence\
+  \ and the computed value, stop and give a final\n   answer.\n\nStop rule: as soon as you can answer,\
+  \ stop calling tools and answer.\nNever make more than two web_search calls for one question.\n\nCitations:\
+  \ when you cite a source, write the FULL URL exactly as it\nappeared in the fetch_page result, on its\
+  \ own line in your final\nanswer. Never cite a URL you did not fetch in this run.\n"
 tools:
   web_search:
-    description: "Search the web for sources. Pass a short topical query string."
+    description: Search the web for sources. Pass a short topical query string.
   fetch_page:
-    description: "Fetch and read a page. Pass the exact URL returned by web_search."
+    description: Fetch and read a page. Pass the exact URL returned by web_search.
   calculator:
-    description: "Evaluate arithmetic. Pass a single arithmetic expression with numbers and operators, e.g. \"(128.4 * 3) + 20\"."
-
+    description: Evaluate arithmetic. Pass a single arithmetic expression with numbers and operators,
+      e.g. "(128.4 * 3) + 20".
 max_steps: 8
 retry_on_parse_error: false
