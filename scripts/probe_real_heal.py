@@ -83,8 +83,9 @@ def baseline(bug: str, preset: str | None = None) -> dict:
 
 
 def main() -> int:
-    bug = "loop"
-    preset = sys.argv[1] if len(sys.argv) > 1 else None
+    # argv: [bug] [preset]. Default stays loop for the recorded Groq evidence.
+    bug = sys.argv[1] if len(sys.argv) > 1 else "loop"
+    preset = sys.argv[2] if len(sys.argv) > 2 else None
     if preset:
         print(f"using strengthened preset: {preset}")
     live = init_tracing()
@@ -182,7 +183,7 @@ def main() -> int:
         "clean_control": control,
         "heldout_task_ids": [t["id"] for t in heldout_for(bug)],
     }
-    suffix = f"_{preset}" if preset else ""
+    suffix = f"_{preset}" if preset else f"_{bug}"
     out = Path(__file__).resolve().parents[1] / "evidence" / f"real_heal_loop{suffix}.json"
     out.write_text(json.dumps(report, indent=2, default=str))
     print(f"\nwrote {out}")

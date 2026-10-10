@@ -128,6 +128,51 @@ def test_role_model_does_not_leak_across_roles():
         )
 
 
+def test_build_client_forwards_the_role():
+    """build_client(role=...) must return THAT role's provider, not the patient's.
+
+    It did not. `chain()` defaults to role="patient", and build_client called it
+    bare, so a heal was attributed to nova-micro while the evidence claimed
+    Sonnet had reasoned about it. chain(role="medic") resolved correctly, which
+    is why the bug survived: the two functions disagreed and only the one the
+    heal actually calls was wrong.
+    """
+    import os
+
+    os.environ["LLM_API_KEY_LITELLM"] = "sk-test-not-real"
+    os.environ["LLM_MODEL_LITELLM_PATIENT"] = "nova-micro"
+    from medic import providers as prov
+
+    for role, want in (("patient", "nova-micro"), ("medic", "claude-sonnet-4.6")):
+        _, provider = prov.build_client(role=role)
+        assert provider.model == want, (
+            f"build_client(role={role!r}) returned {provider.model!r}, "
+            f"expected {want!r}"
+        )
+
+
+def test_chain_and_build_client_agree():
+    """The reader and the writer must not disagree about which model serves a role.
+
+    A split like this is invisible in the chain line, which only prints the
+    patient — so the wrong attribution looks correct until someone reads the
+    evidence file.
+    """
+    import os
+
+    os.environ["LLM_API_KEY_LITELLM"] = "sk-test-not-real"
+    os.environ["LLM_MODEL_LITELLM_PATIENT"] = "nova-micro"
+    from medic import providers as prov
+
+    for role in prov.ROLE_MODELS:
+        chained = prov.chain(role=role)[0].model
+        _, built = prov.build_client(role=role)
+        assert chained == built.model, (
+            f"role {role!r}: chain() says {chained!r} but build_client() "
+            f"returned {built.model!r}"
+        )
+
+
 if __name__ == "__main__":
     fns = [v for k, v in sorted(globals().items()) if k.startswith("test_")]
     failed = 0

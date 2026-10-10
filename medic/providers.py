@@ -126,10 +126,15 @@ def _provider(name: str, role: str = "patient") -> Provider | None:
     route = tuple(
         m.strip() for m in get(f"LLM_ROUTE_{name.upper()}", "").split(",") if m.strip()
     )
-    model = get(model_env)
+    # A role-specific override wins over the provider-wide one. Without it,
+    # LLM_MODEL_LITELLM is read by BOTH roles, so pinning the patient to
+    # nova-micro silently pinned the medic to it too — and a heal then gets
+    # attributed to a cheap patient model while the evidence says the medic
+    # reasoned on it. A measurement attributed to the wrong model is worse than
+    # no measurement.
+    role_env = f"LLM_MODEL_{name.upper()}_{role.upper()}"
+    model = get(role_env) or get(model_env)
     if not model:
-        # No explicit model: use the role default for this provider. An
-        # explicit LLM_MODEL_* always wins, so a caller can override.
         model = _role_model_for(name, role)
     return Provider(
         name=name,
@@ -243,7 +248,13 @@ def build_client(preferred: str | None = None, role: str = "patient"):
     """Return (client, provider). Raises only when nothing is configured."""
     from openai import OpenAI
 
-    providers = chain()
+    # `role` must be forwarded here. `chain()` defaults to "patient", so calling
+    # it bare made build_client(role="medic") return the PATIENT's provider — a
+    # heal would then be attributed to the cheap patient model while the
+    # evidence claimed the medic reasoned on Sonnet. Verified directly:
+    # chain(role="medic") resolved claude-sonnet-4.6 while
+    # build_client(role="medic") returned nova-micro.
+    providers = chain(role=role)
     if preferred:
         providers.sort(key=lambda p: 0 if p.name == preferred else 1)
     if not providers:
