@@ -1,57 +1,85 @@
 {
   "purpose": "Which real models actually go wrong when the config asks them to? Measured, not assumed. Every row is a real run at temperature 0 on the same fixtures.",
   "bug": "loop",
-  "preset": "bugs/presets/loop.yaml — stop rule removed, explicit licence to keep searching, max_steps 40",
+  "preset": "bugs/presets/loop.yaml \u2014 stop rule removed, explicit licence to keep searching, max_steps 40",
   "task": "loop-widgets (train)",
   "step_limit": 8,
   "measured_utc": "2026-10-10",
-
   "results": [
     {
       "model": "openai/gpt-oss-20b",
       "provider": "groq",
-      "clean": {"passed": true, "steps": 4, "tokens": 4064},
-      "buggy": {"passed": false, "steps": 12, "tokens": 23136},
+      "clean": {
+        "passed": true,
+        "steps": 4,
+        "tokens": 4064
+      },
+      "buggy": {
+        "passed": false,
+        "steps": 12,
+        "tokens": 23136
+      },
       "reproduces": true,
       "note": "Twice: 12 steps/23,136 tokens and 10 steps/15,478 tokens on separate runs."
     },
     {
       "model": "laguna-s-2.1",
       "provider": "nara",
-      "clean": {"passed": true, "steps": 3, "tokens": 3437},
-      "buggy": {"passed": true, "steps": 4, "tokens": null},
+      "clean": {
+        "passed": true,
+        "steps": "3 and 4 across two runs",
+        "tokens": "3,437 and 3,700"
+      },
+      "buggy": {
+        "passed": true,
+        "steps": 4,
+        "tokens": null
+      },
       "reproduces": false,
-      "note": "Adds one extra search under the buggy prompt, then stops on its own."
+      "note": "Adds one extra search under the buggy prompt, then stops on its own.",
+      "run_variance": "Two runs of the identical clean config gave 3 steps and 4 steps. Temperature 0 does NOT make a hosted model bit-identical; route/load-balancer variation is the likely cause."
     },
     {
       "model": "nemotron-3-ultra-free",
       "provider": "nara",
-      "clean": {"passed": true, "steps": 3, "tokens": 4364},
-      "buggy": {"passed": true, "steps": 4, "tokens": 5789},
+      "clean": {
+        "passed": true,
+        "steps": 3,
+        "tokens": 4364
+      },
+      "buggy": {
+        "passed": true,
+        "steps": 4,
+        "tokens": 5789
+      },
       "reproduces": false,
       "note": "Same pattern: +1 step, +1,425 tokens, still answers correctly."
     },
     {
       "model": "agnes-2.5-flash",
       "provider": "nara",
-      "clean": {"passed": true, "steps": 4, "tokens": 5898},
-      "buggy": {"passed": true, "steps": 5, "tokens": 6307},
+      "clean": {
+        "passed": true,
+        "steps": 4,
+        "tokens": 5898
+      },
+      "buggy": {
+        "passed": true,
+        "steps": 5,
+        "tokens": 6307
+      },
       "reproduces": false,
       "note": "Same pattern: +1 step, +409 tokens, still answers correctly."
     }
   ],
-
-  "finding": "The buggy prompt reliably costs these models one extra search and 400-1,400 extra tokens — the budget pressure is visible — but none of them runs away. gpt-oss-20b is the only one that exceeds the step limit, by 50%.",
-
+  "finding": "The buggy prompt reliably costs these models one extra search and 400-1,400 extra tokens \u2014 the budget pressure is visible \u2014 but none of them runs away. gpt-oss-20b is the only one that exceeds the step limit, by 50%.",
   "interpretation": "This is a capability difference, not a fluke. A model that keeps re-searching despite an explicit licence to stop has weaker instruction-following on termination. It does NOT mean the loop bug is fake: it reproduces on the one model tested that misbehaves, it reproduces deterministically with the scripted agent, and a real deployment would run a spread of models including weaker ones.",
-
-  "consequence_for_the_demo": "The live demo must use openai/gpt-oss-20b (Groq), because it is the only model measured that genuinely fails. Using a NaraRouter model would show a green run and there would be nothing to heal — which is a true result but a useless demo, and presenting it as a heal would be dishonest. NaraRouter models remain the fallback chain for when Groq's daily budget is exhausted, where their job is reliability, not bug reproduction.",
-
+  "consequence_for_the_demo": "The live demo must use openai/gpt-oss-20b (Groq), because it is the only model measured that genuinely fails. Using a NaraRouter model would show a green run and there would be nothing to heal \u2014 which is a true result but a useless demo, and presenting it as a heal would be dishonest. NaraRouter models remain the fallback chain for when Groq's daily budget is exhausted, where their job is reliability, not bug reproduction.",
   "cost_of_this_choice": "Groq's free tier is 200,000 tokens/day and a looping run alone costs ~23,000 of it. A single demo day of rehearsals could exhaust the budget. This is the single largest demo-day risk and is recorded as such.",
-
   "not_measured": [
-    "Whether any NaraRouter model reproduces bug 1 or bug 2 — not tested.",
+    "Whether any NaraRouter model reproduces bug 1 or bug 2 \u2014 not tested.",
     "Whether the models above reproduce loop at other temperatures or on other tasks.",
     "How many times each was run: one clean + one buggy run per model, except gpt-oss-20b which was run twice on the buggy preset."
-  ]
+  ],
+  "determinism_note": "Every model here was run once clean + once buggy, except gpt-oss-20b (twice on buggy). A repeat clean run of laguna-s-2.1 differed by one step, so any single-run figure here should be read as an observation, not a constant. The scripted agent IS deterministic, which is why it backs the tests and the backup demo."
 }

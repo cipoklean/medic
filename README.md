@@ -129,9 +129,12 @@ Record: [`evidence/recovery_parse_error.json`](evidence/recovery_parse_error.jso
   JSON schema rather than the vague prose description, so "Helps with
   calculations." changes nothing. The bug is real for weaker agents, not this one.
 * **A real-model heal is demonstrated for `loop` only.**
-* **A real model at temperature 0 is not guaranteed bit-identical across runs.**
-  The scripted agent is. Determinism claims in this README are about the
-  scripted path.
+* **A real model at temperature 0 is NOT bit-identical across runs.** Measured:
+  two runs of the identical clean config on `laguna-s-2.1` took 3 steps and 4
+  steps. Hosted providers vary by routing and load, not by sampling. So every
+  real-model figure in this repo is an observation from a small number of runs,
+  not a constant. **The scripted agent is deterministic**, which is why it
+  backs the tests and the backup demo.
 * **Cost figures use the rate table in `patient/tracing.py`**, not a provider
   invoice.
 * The offline suites prove the *machinery* — patch allowlist, verification,
