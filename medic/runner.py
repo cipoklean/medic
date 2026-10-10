@@ -48,8 +48,39 @@ def run_once(
     on_step: Callable[[Step], None] | None = None,
     mode: LLMMode = DEFAULT_MODE,
 ) -> RunResult:
-    agent = PatientAgent(config, llm=build_llm(config, mode), on_step=on_step)
+    """Run the patient once.
+
+    The LLM client is wrapped so every request passes the provider's rate
+    limiter. The patient loop is the BURSTEST part of a heal - a looping agent
+    can issue a dozen calls in seconds - so throttling only the diagnose and
+    surgeon calls would leave the worst case unprotected.
+    """
+    client = build_llm(config, mode)
+    if mode == "real":
+        client = _throttled(client)
+    agent = PatientAgent(config, llm=client, on_step=on_step)
     return agent.run(question, recorder)
+
+
+def _throttled(client):
+    """Wrap chat.completions.create with the provider's rate limit."""
+    from medic import providers as prov
+    from medic.ratelimit import limiter_for
+
+    try:
+        _, provider = prov.build_client()
+        limiter = limiter_for(provider.name)
+    except Exception:
+        return client
+
+    original = client.chat.completions.create
+
+    def create(*args, **kwargs):
+        limiter.acquire()
+        return original(*args, **kwargs)
+
+    client.chat.completions.create = create
+    return client
 
 
 def measured(result, recorder: Recorder) -> dict:

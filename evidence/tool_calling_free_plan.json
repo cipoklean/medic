@@ -1,0 +1,58 @@
+{
+  "base_url": "https://router.bynara.id/v1",
+  "tested": 5,
+  "tool_calling": [
+    "laguna-s-2.1",
+    "nemotron-3-ultra-free",
+    "agnes-2.5-flash"
+  ],
+  "skipped_unstable": [],
+  "results": [
+    {
+      "model": "jev",
+      "ok": false,
+      "error": "HTTP 400: {\"error\":{\"type\":\"bad_request\",\"message\":\"The model rejected this request. It may not support the input you sent (e.g. i"
+    },
+    {
+      "model": "laguna-s-2.1",
+      "ok": true,
+      "tool_calls": 1,
+      "arguments": "{\"query\": \"current price of a standard widget\"}",
+      "arguments_is_json": true,
+      "prompt_tokens": 151,
+      "completion_tokens": 41,
+      "reasoning_tokens": 0,
+      "elapsed_s": 5.16,
+      "content_preview": "I'll search the web for the current price of a standard widget."
+    },
+    {
+      "model": "nemotron-3-ultra-free",
+      "ok": true,
+      "tool_calls": 1,
+      "arguments": "{\"query\":\"standard widget price\"}",
+      "arguments_is_json": true,
+      "prompt_tokens": 285,
+      "completion_tokens": 105,
+      "reasoning_tokens": 0,
+      "elapsed_s": 5.48,
+      "content_preview": ""
+    },
+    {
+      "model": "exo-stealh",
+      "ok": false,
+      "error": "HTTP 400: {\"error\":{\"type\":\"bad_request\",\"message\":\"The model rejected this request. It may not support the input you sent (e.g. i"
+    },
+    {
+      "model": "agnes-2.5-flash",
+      "ok": true,
+      "tool_calls": 1,
+      "arguments": "{\"query\": \"current price of a standard widget\"}",
+      "arguments_is_json": true,
+      "prompt_tokens": 566,
+      "completion_tokens": 53,
+      "reasoning_tokens": 0,
+      "elapsed_s": 45.67,
+      "content_preview": "\n\n"
+    }
+  ]
+}

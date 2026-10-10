@@ -115,3 +115,24 @@ def next_provider(failed: Provider) -> Provider | None:
         if p.name == failed.name:
             return providers[i + 1] if i + 1 < len(providers) else None
     return None
+
+
+def next_model(current: Provider) -> Provider | None:
+    """The next MODEL on the SAME provider.
+
+    Useful when a provider is reachable and paid, but one model is missing or
+    rejects tool calling. Both were observed on NaraRouter: `jev` and
+    `exo-stealh` return HTTP 400 'the model rejected this request' when a tools
+    array is sent, while three others on the same free plan work fine.
+    """
+    models = [m.strip() for m in get("LLM_MODEL_NARA_FALLBACKS", "").split(",") if m.strip()]
+    if not models:
+        return None
+    try:
+        idx = models.index(current.model)
+    except ValueError:
+        return None
+    for nxt in models[idx + 1:]:
+        return Provider(name=current.name, base_url=current.base_url,
+                        api_key=current.api_key, model=nxt)
+    return None

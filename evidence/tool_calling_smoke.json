@@ -16,105 +16,125 @@
       "completion_tokens": 52,
       "reasoning_tokens": 0,
       "elapsed_s": 19.8,
-      "content_preview": "\n\n"
+      "content_preview": "\n\n",
+      "classification": "verified_tool_calling"
     },
     {
       "model": "agnes-3-flash",
       "ok": false,
-      "error": "HTTP 402: {\"error\":{\"type\":\"payment_required\",\"message\":\"Insufficient credits. Please top up your balance.\",\"request_id\":\"eb0e0740"
+      "error": "HTTP 429: insufficient credits (model requires paid credit, not a capability failure)",
+      "classification": "not_on_free_plan"
     },
     {
       "model": "agnes-video-v2.0",
       "ok": false,
-      "error": "HTTP 403: {\"error\":{\"type\":\"forbidden\",\"message\":\"Your plan does not include the requested model.\",\"request_id\":\"39fb1370-eace-438"
+      "error": "HTTP 403: {\"error\":{\"type\":\"forbidden\",\"message\":\"Your plan does not include the requested model.\",\"request_id\":\"39fb1370-eace-438",
+      "classification": "other"
     },
     {
       "model": "claude-fable-5.1",
       "ok": false,
-      "error": "HTTP 429: rate limit"
+      "error": "HTTP 429: insufficient credits (model requires paid credit, not a capability failure)",
+      "classification": "not_on_free_plan"
     },
     {
       "model": "claude-haiku-5.5",
       "ok": false,
-      "error": "HTTP 429: rate limit"
+      "error": "HTTP 429: insufficient credits (model requires paid credit, not a capability failure)",
+      "classification": "not_on_free_plan"
     },
     {
       "model": "claude-opus-4.8",
       "ok": false,
-      "error": "HTTP 429: rate limit"
+      "error": "HTTP 429: insufficient credits (model requires paid credit, not a capability failure)",
+      "classification": "not_on_free_plan"
     },
     {
       "model": "claude-opus-5",
       "ok": false,
-      "error": "HTTP 429: rate limit"
+      "error": "HTTP 429: insufficient credits (model requires paid credit, not a capability failure)",
+      "classification": "not_on_free_plan"
     },
     {
       "model": "claude-opus-5.5",
       "ok": false,
-      "error": "HTTP 429: rate limit"
+      "error": "HTTP 429: insufficient credits (model requires paid credit, not a capability failure)",
+      "classification": "not_on_free_plan"
     },
     {
       "model": "claude-sonnet-5",
       "ok": false,
-      "error": "HTTP 429: rate limit"
+      "error": "HTTP 429: insufficient credits (model requires paid credit, not a capability failure)",
+      "classification": "not_on_free_plan"
     },
     {
       "model": "claude-sonnet-5.5",
       "ok": false,
-      "error": "HTTP 429: rate limit"
+      "error": "HTTP 429: insufficient credits (model requires paid credit, not a capability failure)",
+      "classification": "not_on_free_plan"
     },
     {
       "model": "deepseek-v4-flash",
       "ok": false,
-      "error": "HTTP 429: rate limit"
+      "error": "HTTP 429: insufficient credits (model requires paid credit, not a capability failure)",
+      "classification": "not_on_free_plan"
     },
     {
       "model": "deepseek-v4-flash-alibaba",
       "ok": false,
-      "error": "HTTP 429: rate limit"
+      "error": "HTTP 429: insufficient credits (model requires paid credit, not a capability failure)",
+      "classification": "not_on_free_plan"
     },
     {
       "model": "deepseek-v4-flash-vision-exp",
       "ok": false,
-      "error": "HTTP 429: rate limit"
+      "error": "HTTP 429: insufficient credits (model requires paid credit, not a capability failure)",
+      "classification": "not_on_free_plan"
     },
     {
       "model": "deepseek-v4-pro",
       "ok": false,
-      "error": "HTTP 429: rate limit"
+      "error": "HTTP 429: insufficient credits (model requires paid credit, not a capability failure)",
+      "classification": "not_on_free_plan"
     },
     {
       "model": "deepseek-v4.1-flash",
       "ok": false,
-      "error": "HTTP 429: rate limit"
+      "error": "HTTP 429: insufficient credits (model requires paid credit, not a capability failure)",
+      "classification": "not_on_free_plan"
     },
     {
       "model": "exo-stealh",
       "ok": false,
-      "error": "HTTP 400: {\"error\":{\"type\":\"bad_request\",\"message\":\"The model rejected this request. It may not support the input you sent (e.g. i"
+      "error": "HTTP 400: {\"error\":{\"type\":\"bad_request\",\"message\":\"The model rejected this request. It may not support the input you sent (e.g. i",
+      "classification": "other"
     },
     {
       "model": "gemini-3.1-pro-high",
       "ok": false,
-      "error": "HTTP 429: rate limit"
+      "error": "HTTP 429: insufficient credits (model requires paid credit, not a capability failure)",
+      "classification": "not_on_free_plan"
     },
     {
       "model": "gemini-3.8-flash-high",
       "ok": false,
-      "error": "HTTP 429: rate limit"
+      "error": "HTTP 429: insufficient credits (model requires paid credit, not a capability failure)",
+      "classification": "not_on_free_plan"
     },
     {
       "model": "glm-5.2",
       "ok": false,
-      "error": "HTTP 429: rate limit"
+      "error": "HTTP 429: insufficient credits (model requires paid credit, not a capability failure)",
+      "classification": "not_on_free_plan"
     },
     {
       "model": "glm-5.3",
       "ok": false,
-      "error": "HTTP 429: rate limit"
+      "error": "HTTP 429: insufficient credits (model requires paid credit, not a capability failure)",
+      "classification": "not_on_free_plan"
     }
   ],
-  "IMPORTANT_CAVEAT": "18 of 20 models returned HTTP 429 'Insufficient credits. Please top up your balance'. Those models were NOT tested for tool calling - the 429 is an account-level credit failure, not a model capability result. Only agnes-2.5-flash and exo-stealh (HTTP 400, model-specific) produced a real capability signal. '1 of 20 emit real tool_calls' is therefore NOT a valid quality ratio and must not be quoted as one.",
+  "IMPORTANT_CAVEAT": "NaraRouter's free plan covers only: agnes-2.5-flash, exo-stealh, jev, laguna-s-2.1, nemotron-3-ultra-free. The other models returned HTTP 429 'Insufficient credits' - they require paid credit and were NOT tested. That is a billing state, not a tool-calling failure, and must not be read as one.",
   "verified_tool_calling": [
     {
       "model": "agnes-2.5-flash",
@@ -127,5 +147,12 @@
       "note": "two independent runs, both emitted a real tool_call with valid JSON arguments"
     }
   ],
-  "not_tested_credit_blocked": 18
+  "free_plan_models": [
+    "agnes-2.5-flash",
+    "exo-stealh",
+    "jev",
+    "laguna-s-2.1",
+    "nemotron-3-ultra-free"
+  ],
+  "untested_requires_paid_credit": 17
 }

@@ -61,6 +61,7 @@ def ask_json(
     heuristic ceiling is wrong for every prompt and every model.
     """
     from medic import providers as prov
+    from medic.ratelimit import limiter_for
 
     client, provider = _client()
     ensure_traced()
@@ -75,6 +76,8 @@ def ask_json(
     for attempt in range(rate_limit_retries + 1):
         limit = ceiling * (2 ** budget_attempts)
         try:
+            # Pace THIS process. Free plans are 15 req/min and a heal is a burst.
+            limiter_for(provider.name).acquire()
             span_cm = (
                 recorder.span("LLM", span_name, {"system": system[:200], "user": user[:400]})
                 if recorder
@@ -121,6 +124,18 @@ def ask_json(
             return parse_json(content), metrics
         except Exception as exc:
             last_err = exc
+            if _is_model_unsupported(exc):
+                # A reachable provider whose current model rejects the request
+                # (NaraRouter's jev and exo-stealh both do on a tools array).
+                # Rotating models beats abandoning a working provider.
+                nxt_model = prov.next_model(provider)
+                if nxt_model is not None:
+                    print(f"[medic] {provider.label()} cannot serve this request; "
+                          f"rotating to {nxt_model.label()}")
+                    provider = nxt_model
+                    client, _ = prov.build_client(preferred=nxt_model.name)
+                    budget_attempts = 0
+                    continue
             if _is_daily_limit(exc):
                 nxt = prov.next_provider(provider)
                 if nxt is not None:
@@ -137,7 +152,10 @@ def ask_json(
                 # every held-out task), so hitting this is routine, not fatal.
                 # Retry with the delay the provider states, bounded.
                 wait = _retry_after(exc, attempt)
-                time.sleep(min(wait, 30.0))
+                # A per-MINUTE budget needs a real wait; a per-second one does
+                # not. Floor it at the limiter's own interval so we never retry
+                # faster than the rate we just enforced.
+                time.sleep(max(min(wait, 60.0), 60.0 / max(1, limiter_for(provider.name).max_calls)))
                 continue
             if _is_budget_error(exc):
                 budget_attempts += 1
@@ -147,6 +165,12 @@ def ask_json(
             raise
 
     raise last_err if last_err else RuntimeError("ask_json failed with no error recorded")
+
+
+def _is_model_unsupported(exc: Exception) -> bool:
+    """The provider answered but this model cannot serve the request."""
+    text = str(exc).lower()
+    return "400" in text and ("does not exist" in text or "rejected this request" in text)
 
 
 def _is_daily_limit(exc: Exception) -> bool:
