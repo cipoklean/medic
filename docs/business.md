@@ -52,20 +52,44 @@ at current rates. The margin is in the verification and history, not the tokens.
 
 ## 4. Cost per heal — MEASURED
 
-From `evidence/real_heal_loop.json` (bug `loop`, `openai/gpt-oss-20b`, temperature 0):
+From `evidence/real_heal_loop.json` (bug `loop`, `groq/openai/gpt-oss-20b`, temperature 0):
 
-| Component | Tokens |
-|---|---|
-| Patient run, before (fails, 10 steps) | 15,478 |
-| Patient run, after — train | 7,587 |
-| Patient run, after — held-out ×2 | 7,695 |
-| **Patient total per heal** | **30,760** |
-| Medic's own diagnose + surgeon | **not captured** by that run — see below |
+| Component | Steps | Tokens | Cost @ rate table |
+|---|---|---|---|
+| Patient run, before (fails) | 10 | 15,478 | $0.0568 |
+| Patient run, after — train | 6 | 7,587 | — |
+| Patient run, after — held-out ×2 | 5 + 3 | 7,695 | — |
+| **Patient total per heal** | | **30,760** | **~$0.113** |
+| Medic's own diagnose + surgeon | | **not captured** by that run — see below | |
 
 Cost at our rate table (`patient/tracing.py`: $3/M input, $15/M output):
 
 * before-run alone: **$0.0568**
 * full heal, patient runs only: **~$0.113**
+
+### Healthy-run cost, for comparison (clean config, no bug)
+
+| Model | Provider | Steps | Tokens | Cost |
+|---|---|---|---|---|
+| laguna-s-2.1 | nara | 2 | 1,374–2,235 | $0.006–0.009 |
+| nemotron-3-ultra-free | nara | 3 | 4,364 | $0.0177 |
+| agnes-2.5-flash | nara | 4 | 5,898 | $0.0243 |
+
+A healthy agent run is **$0.006–0.024**. The loop bug turned a ~$0.011 run into
+a $0.057 run — roughly **5× the cost of doing nothing** — before any repair.
+
+### The savings argument — the strongest number here
+
+| | Steps | Tokens |
+|---|---|---|
+| Buggy run, train task | 10 | 15,478 |
+| Same task after the patch | 6 | 7,587 |
+| **Reduction** | **40%** | **51%** |
+
+Medic does not only stop the failure — it removes roughly half the token spend
+on that task. A team paying per-token for inference gets the repair **and** a
+cheaper steady state. That is the number to lead a sales conversation with, and
+it is measured on a task the patch never saw.
 
 **Honest gaps in this number:**
 
@@ -137,9 +161,34 @@ Stated plainly, because a plan that cannot fail is not a plan:
 
 | Claim | Source |
 |---|---|
-| 30,760 tokens per heal; before/after step counts | `evidence/real_heal_loop.json` |
-| real model reproduces the loop bug (12 steps vs limit 8) | `evidence/real_llm_reproduction.json` |
+| 30,760 tokens/heal; 10→6 steps; **51% token saving** | `evidence/real_heal_loop.json` |
+| loop reproduces only on gpt-oss-20b, not on 3 other models | `evidence/loop_capability_matrix.json` |
+| bugs 2 and 4 do **not** reproduce on laguna-s-2.1 | `evidence/real_llm_reproduction_nara.json` |
 | recovery from a failed tool call, one boolean | `evidence/recovery_parse_error.json` |
 | clean run on a real model, traced and readable | `evidence/trace_clean_real_llm.json` |
+| which models emit real tool calls | `evidence/tool_calling_free_plan.json` |
 | every commit is an Entire checkpoint | git log + Entire CLI |
-| 200,000 tokens/day provider limit | Groq 429 response during a real run |
+| 200,000 tokens/day Groq limit | Groq 429 during a real run |
+| temperature 0 is **not** deterministic | two runs of one config, 3 vs 4 steps |
+
+## 9. Product surface implied by the measurements
+
+Three facts from this build should shape the roadmap, because each one is a
+product decision rather than a bug:
+
+1. **The failures are model-specific.** The same buggy prompt loops
+   `gpt-oss-20b` (12 steps) and not `laguna-s-2.1`, `nemotron-3-ultra-free` or
+   `agnes-2.5-flash` (3–5 steps). A hosted Medic should therefore record the
+   model alongside the trace and expect the same config to be healthy on one
+   model and broken on another. That is a feature — it is exactly the
+   "quietly wrong, but only on this model" case nobody catches by reading a
+   prompt.
+2. **Two of four bugs never reproduced on a strong model.** Bugs 1 and 2 are real
+   for weaker agents and for the deterministic scripted agent, but a modern
+   model defends itself with the JSON schema and its own caution. Sells better
+   as *"catches what your model actually does"* than as a universal repair
+   system.
+3. **Recovery is a config flag, not a rewrite.** Bug 2's entire fix is
+   `retry_on_parse_error: false → true`. The cheapest possible intervention is
+   often a single boolean, which is a good story for adoption: Medic tries the
+   smallest edit that the hard check can prove.

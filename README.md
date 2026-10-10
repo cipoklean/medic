@@ -102,12 +102,35 @@ shown to diagnose or surgeon.
 
 Full record: [`evidence/real_heal_loop.json`](evidence/real_heal_loop.json).
 
-### Bug reproduction on a real model
+### The same buggy prompt breaks one model and not three others
 
-| Bug | clean | buggy | reproduces? |
+This is the sharpest thing we measured, and it is a 10-second beat in the demo:
+
+| Model | clean | same buggy prompt | reproduces? |
 |---|---|---|---|
-| 3 · loop | PASS (4 steps) | FAIL (12 steps) | **yes** |
-| 1 · wrong args | PASS | PASS | **no** — see limits |
+| `groq/openai/gpt-oss-20b` | PASS, 4 steps | **FAIL, 12 steps** (limit 8) | **yes** |
+| `nara/laguna-s-2.1` | PASS, 3 steps | PASS, 4 steps | no |
+| `nara/nemotron-3-ultra-free` | PASS, 3 steps | PASS, 4 steps | no |
+| `nara/agnes-2.5-flash` | PASS, 4 steps | PASS, 5 steps | no |
+
+Identical prompt, identical task, identical fixtures. The buggy prompt costs
+every model one extra search — the budget pressure is visible in the tokens —
+but only `gpt-oss-20b` runs away.
+
+**Medic's job is to catch the model-specific failure in the trace.** That is the
+case nobody spots by re-reading the prompt: it looks fine, and it is fine, on
+the three models where it is fine. Full data:
+[`evidence/loop_capability_matrix.json`](evidence/loop_capability_matrix.json).
+
+### Bug reproduction, other bugs
+
+| Bug | model | clean | buggy | reproduces? |
+|---|---|---|---|---|
+| 2 · malformed JSON | `laguna-s-2.1` | PASS | PASS | **no** — the model avoided the broken payload even with retry disabled |
+| 4 · hallucinated citations | `laguna-s-2.1` | PASS | PASS | **no** — every URL it cited had actually been fetched |
+
+Neither was tuned to fail. Both are demonstrated with the deterministic scripted
+agent instead, which is what they are for.
 
 ### Recovery from a failed tool call (bug 2)
 
@@ -124,11 +147,15 @@ Record: [`evidence/recovery_parse_error.json`](evidence/recovery_parse_error.jso
 
 ## Honest limits
 
-* **Bugs 1 and 2 are demonstrated with the deterministic scripted agent**, not a
-  real model. Bug 1 *does not reproduce* on a strong model at all: it reads the
-  JSON schema rather than the vague prose description, so "Helps with
-  calculations." changes nothing. The bug is real for weaker agents, not this one.
-* **A real-model heal is demonstrated for `loop` only.**
+* **Bugs 1, 2 and 4 are demonstrated with the deterministic scripted agent**,
+  not a real model. None reproduced on `gpt-oss-20b` or `laguna-s-2.1`: a
+  capable model reads the JSON schema rather than a vague prose description
+  (bug 1), avoids a malformed payload even with retry disabled (bug 2), and
+  cites only URLs it actually fetched (bug 4). None was tuned to fail. The
+  bugs are real for weaker agents and for the scripted agent.
+* **A real-model heal is demonstrated for `loop`, on `gpt-oss-20b` only.** It is
+  the one model measured that genuinely fails, and the demo therefore runs on
+  it.
 * **A real model at temperature 0 is NOT bit-identical across runs.** Measured:
   two runs of the identical clean config on `laguna-s-2.1` took 3 steps and 4
   steps. Hosted providers vary by routing and load, not by sampling. So every
