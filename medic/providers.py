@@ -26,6 +26,10 @@ from dataclasses import dataclass
 from patient.config import get
 
 
+class NoProviderConfigured(RuntimeError):
+    pass
+
+
 @dataclass(frozen=True)
 class Provider:
     name: str
@@ -82,15 +86,43 @@ def _provider(name: str) -> Provider | None:
 
 
 def chain() -> list[Provider]:
-    """Configured providers, in the order they should be tried."""
-    order = [p.strip() for p in get("LLM_PROVIDER_CHAIN", "nara,groq").split(",") if p.strip()]
+    """Configured providers, in the order they should be tried.
+
+    A provider that is NAMED but not configured is an ERROR, never a silent
+    skip. Skipping it let `LLM_PROVIDER_CHAIN=openrouter` fall through to the
+    generic LLM_* provider — which is GROQ's credentials — so a probe labelled
+    "openrouter" actually hit Groq and produced a plausible, wrong result. A
+    measurement attributed to the wrong host is worse than no measurement.
+    """
+    raw = get("LLM_PROVIDER_CHAIN", "nara,groq")
+    order = [p.strip() for p in raw.split(",") if p.strip()]
+
     out: list[Provider] = []
+    unconfigured: list[str] = []
+    unknown: list[str] = []
     for name in order:
-        p = _provider(name)
-        if p and p.configured:
-            out.append(p)
+        if name not in NAMED:
+            unknown.append(name)
+            continue
+        prov = _provider(name)
+        if prov and prov.configured:
+            out.append(prov)
+        else:
+            unconfigured.append(name)
+
+    if unknown:
+        raise NoProviderConfigured(
+            f"Unknown provider(s) in LLM_PROVIDER_CHAIN: {', '.join(unknown)}. "
+            f"Known: {', '.join(sorted(NAMED))}."
+        )
     if not out:
-        # No chain configured: fall back to whatever the plain LLM_* vars imply.
+        if unconfigured:
+            raise NoProviderConfigured(
+                f"LLM_PROVIDER_CHAIN names {', '.join(unconfigured)} but none is "
+                f"fully configured (base_url, api_key and model are all required).\n"
+                f"Refusing to fall back to another provider: a run must be "
+                f"attributable to the provider you asked for."
+            )
         generic = Provider("default", get("LLM_BASE_URL"), get("LLM_API_KEY"), get("LLM_MODEL"))
         if generic.configured:
             out.append(generic)
@@ -102,10 +134,6 @@ def describe() -> str:
     if not providers:
         return "no provider configured"
     return " -> ".join(p.label() for p in providers)
-
-
-class NoProviderConfigured(RuntimeError):
-    pass
 
 
 def build_client(preferred: str | None = None):

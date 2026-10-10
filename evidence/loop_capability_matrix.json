@@ -70,16 +70,38 @@
       },
       "reproduces": false,
       "note": "Same pattern: +1 step, +409 tokens, still answers correctly."
+    },
+    {
+      "model": "openai/gpt-oss-20b",
+      "provider": "openrouter",
+      "clean": {
+        "passed": true,
+        "steps": 3,
+        "tokens": 2913
+      },
+      "buggy": {
+        "passed": false,
+        "steps": 1,
+        "tokens": 1111
+      },
+      "reproduces": true,
+      "failure_mode": "empty_response",
+      "note": "DIFFERENT FAULT from the same model on groq. On groq the buggy prompt caused a 12-step overrun; on openrouter the run ended after ONE step because turn 2 returned neither content nor a tool call. Both are real model misbehaviour under the same prompt, but they are not the same bug, and the OpenRouter one exposed a defect in Medic: an empty response was being recorded as stopped_because=final_answer with an empty answer, so a genuine model fault read as a legitimate empty conclusion. Now reported as failure_type=other with stopped_because=empty_response."
     }
   ],
-  "finding": "The buggy prompt reliably costs these models one extra search and 400-1,400 extra tokens \u2014 the budget pressure is visible \u2014 but none of them runs away. gpt-oss-20b is the only one that exceeds the step limit, by 50%.",
+  "finding": "The buggy prompt reliably costs these models one extra search and 400-1,400 extra tokens \u2014 the budget pressure is visible \u2014 but none of them runs away. gpt-oss-20b is the only one that exceeds the step limit, by 50%. The SAME model name on a DIFFERENT host fails differently: 12-step overrun on groq, single empty response on openrouter.",
   "interpretation": "This is a capability difference, not a fluke. A model that keeps re-searching despite an explicit licence to stop has weaker instruction-following on termination. It does NOT mean the loop bug is fake: it reproduces on the one model tested that misbehaves, it reproduces deterministically with the scripted agent, and a real deployment would run a spread of models including weaker ones.",
-  "consequence_for_the_demo": "The live demo must use openai/gpt-oss-20b (Groq), because it is the only model measured that genuinely fails. Using a NaraRouter model would show a green run and there would be nothing to heal \u2014 which is a true result but a useless demo, and presenting it as a heal would be dishonest. NaraRouter models remain the fallback chain for when Groq's daily budget is exhausted, where their job is reliability, not bug reproduction.",
+  "consequence_for_the_demo": "The demo needs a genuine, REPRODUCIBLE failure. groq gives a 12-step overrun that is easy to show and easy to fix (6 steps after). OpenRouter's empty response is also a real fault but is a worse demo: it ends in one step, so there is no visible runaway behaviour, and it may not recur on every run. Use groq for the demo take; keep openrouter as the same-model fallback for when groq's daily budget is exhausted, and be explicit on camera about which provider served the run.",
   "cost_of_this_choice": "Groq's free tier is 200,000 tokens/day and a looping run alone costs ~23,000 of it. A single demo day of rehearsals could exhaust the budget. This is the single largest demo-day risk and is recorded as such.",
   "not_measured": [
     "Whether any NaraRouter model reproduces bug 1 or bug 2 \u2014 not tested.",
     "Whether the models above reproduce loop at other temperatures or on other tasks.",
     "How many times each was run: one clean + one buggy run per model, except gpt-oss-20b which was run twice on the buggy preset."
   ],
-  "determinism_note": "Every model here was run once clean + once buggy, except gpt-oss-20b (twice on buggy). A repeat clean run of laguna-s-2.1 differed by one step, so any single-run figure here should be read as an observation, not a constant. The scripted agent IS deterministic, which is why it backs the tests and the backup demo."
+  "determinism_note": "Every model here was run once clean + once buggy, except gpt-oss-20b (twice on buggy). A repeat clean run of laguna-s-2.1 differed by one step, so any single-run figure here should be read as an observation, not a constant. The scripted agent IS deterministic, which is why it backs the tests and the backup demo.",
+  "verification_notes": {
+    "openrouter_reproduction": "verified 2026-10-10, probe evidence/repro_openrouter_gpt-oss-20b.json",
+    "slug_change": "every ':free' slug on OpenRouter is retired - 404 'unavailable for free - use this slug instead'. The paid slug openai/gpt-oss-20b is required and was verified to emit real tool calls.",
+    "provider_attribution": "An earlier 'openrouter' probe silently ran on groq: the chain skipped the unconfigured provider and fell back to the generic LLM_* provider, which is groq's. medic/providers.py now RAISES rather than falling back, because a measurement attributed to the wrong host is worse than none."
+  }
 }

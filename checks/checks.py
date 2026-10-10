@@ -171,6 +171,20 @@ def check_loop(task: dict, result) -> Verdict:
     metrics = {"steps": len(result.steps), "max_steps_allowed": limit}
 
     if not result.answer.strip():
+        # An empty response is a DIFFERENT fault from a loop, and calling it
+        # "never produced a final answer" hides the cause. The loop check is
+        # the one that runs on this task, so it has to name what happened.
+        if result.stopped_because == "empty_response":
+            return Verdict(
+                passed=False,
+                reason="the model returned neither content nor a tool call",
+                details=[
+                    "observed on openrouter/openai/gpt-oss-20b on turn 2",
+                    "this is not a looping agent - the run ended immediately",
+                ],
+                failure_type="other",
+                metrics=metrics,
+            )
         return Verdict(
             passed=False,
             reason="agent never produced a final answer",

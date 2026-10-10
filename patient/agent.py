@@ -168,8 +168,21 @@ class PatientAgent:
                 messages.append(msg.model_dump(exclude_none=True))
 
                 if not msg.tool_calls:
+                    # An empty response is not an answer. Observed on
+                    # openrouter/openai/gpt-oss-20b: turn 2 returned neither
+                    # content nor tool calls, and recording that as
+                    # stopped_because=final_answer with answer="" made a real
+                    # model failure look like a legitimate (empty) conclusion.
+                    # It is now distinguished, so the check that catches it
+                    # reports the true cause.
                     result.answer = msg.content or ""
-                    result.stopped_because = "final_answer"
+                    if not result.answer.strip():
+                        result.stopped_because = "empty_response"
+                        result.error = (
+                            "the model returned neither content nor a tool call"
+                        )
+                    else:
+                        result.stopped_because = "final_answer"
                     break
 
                 for call in msg.tool_calls:

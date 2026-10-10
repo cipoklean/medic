@@ -8,19 +8,40 @@ ROOT = Path(__file__).resolve().parents[1]
 
 
 def load_env() -> None:
-    """Minimal .env loader — avoids a python-dotenv dependency."""
+    """Minimal .env loader — avoids a python-dotenv dependency.
+
+    A key defined TWICE in .env is a hard error. It happened here: an appended
+    provider block shadowed a real key with an empty value, and because
+    os.environ.setdefault never overwrites an existing entry, the empty value
+    won — so the provider looked "not configured" while a valid key sat a few
+    lines above. Silent, and it cost real debugging time.
+    """
     env_file = ROOT / ".env"
     if not env_file.exists():
         return
-    for raw in env_file.read_text().splitlines():
+
+    seen: dict[str, int] = {}
+    duplicates: list[str] = []
+    for lineno, raw in enumerate(env_file.read_text().splitlines(), 1):
         line = raw.strip()
         if not line or line.startswith("#") or "=" not in line:
             continue
         key, _, value = line.partition("=")
         key = key.strip()
         value = value.strip().strip('"').strip("'")
+        if key in seen:
+            duplicates.append(f"{key} (lines {seen[key]} and {lineno})")
+            # Keep the first definition; a later duplicate must not shadow it.
+            continue
+        seen[key] = lineno
         # Real env wins over .env so CI/secret managers are never shadowed.
         os.environ.setdefault(key, value)
+
+    if duplicates:
+        raise RuntimeError(
+            "Duplicate key(s) in .env: " + ", ".join(duplicates) + ". "
+            "Remove the later definition — it can silently shadow a valid value."
+        )
 
 
 def get(name: str, default: str = "") -> str:

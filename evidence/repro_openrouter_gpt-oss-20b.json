@@ -1,0 +1,54 @@
+{
+  "note": "Real model, temperature 0, fixtures only. No preset tuning: whatever the model did is recorded as-is.",
+  "model_note": "see .env LLM_MODEL",
+  "results": [
+    {
+      "bug": "loop",
+      "config": "clean",
+      "run_id": "720fcf092349422d",
+      "neatlogs_trace_id": null,
+      "local_trace": "/home/ubuntu/medic/runs/720fcf092349422d.json",
+      "passed": true,
+      "failure_type": null,
+      "reason": "answered in 3 steps (limit 8)",
+      "details": [],
+      "steps": 3,
+      "total_tokens": 2913,
+      "est_cost_usd": 0.011847,
+      "latency_ms": 16487.21,
+      "stopped_because": "final_answer",
+      "error": null,
+      "tools_used": [
+        "web_search",
+        "fetch_page",
+        "calculator"
+      ],
+      "answer": "The total cost after the 12\u202f% volume discount is **$28,248.00**.",
+      "wall_clock_s": 16.49
+    },
+    {
+      "bug": "loop",
+      "config": "bug:loop",
+      "run_id": "4143e3831fa141e6",
+      "neatlogs_trace_id": null,
+      "local_trace": "/home/ubuntu/medic/runs/4143e3831fa141e6.json",
+      "passed": false,
+      "failure_type": "loop",
+      "reason": "agent never produced a final answer",
+      "details": [
+        "stopped because: final_answer"
+      ],
+      "steps": 1,
+      "total_tokens": 1111,
+      "est_cost_usd": 0.004953,
+      "latency_ms": 4084.2,
+      "stopped_because": "final_answer",
+      "error": null,
+      "tools_used": [
+        "web_search"
+      ],
+      "answer": "",
+      "wall_clock_s": 4.09
+    }
+  ]
+}

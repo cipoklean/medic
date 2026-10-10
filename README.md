@@ -112,6 +112,7 @@ This is the sharpest thing we measured, and it is a 10-second beat in the demo:
 | `nara/laguna-s-2.1` | PASS, 3 steps | PASS, 4 steps | no |
 | `nara/nemotron-3-ultra-free` | PASS, 3 steps | PASS, 4 steps | no |
 | `nara/agnes-2.5-flash` | PASS, 4 steps | PASS, 5 steps | no |
+| `openrouter/openai/gpt-oss-20b` | PASS, 3 steps | **FAIL** — 1 step, empty response | **yes, differently** |
 
 Identical prompt, identical task, identical fixtures. The buggy prompt costs
 every model one extra search — the budget pressure is visible in the tokens —
@@ -119,7 +120,12 @@ but only `gpt-oss-20b` runs away.
 
 **Medic's job is to catch the model-specific failure in the trace.** That is the
 case nobody spots by re-reading the prompt: it looks fine, and it is fine, on
-the three models where it is fine. Full data:
+the three models where it is fine.
+
+The same model name on a *different host* fails differently too: `gpt-oss-20b`
+runs away for 12 steps on Groq, and returns one empty response on OpenRouter.
+Two hosts, two faults, one prompt — which is the argument for a tool that reads
+the trace instead of judging the config. Full data:
 [`evidence/loop_capability_matrix.json`](evidence/loop_capability_matrix.json).
 
 ### Bug reproduction, other bugs
