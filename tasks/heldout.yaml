@@ -47,7 +47,7 @@ question: >-
   Gadget Hub sells a blue gadget and a case together for $169.98. If the blue
   gadget lists at $79.99, what does one case cost? Use the calculator and give
   me the final number.
-expected_answer: 10.0
+expected_answer: 89.99
 max_steps_allowed: 8
 
 ---

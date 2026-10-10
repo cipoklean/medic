@@ -1,0 +1,484 @@
+{
+  "question": "Does nova-micro pass every task on the CLEAN config?",
+  "model": "nova-micro",
+  "runs_per_task": 3,
+  "needed": 2,
+  "tasks": {
+    "loop-widgets": {
+      "runs": [
+        {
+          "run": 1,
+          "passed": true,
+          "reason": "answered in 3 steps (limit 8)",
+          "failure_type": null,
+          "steps": 3,
+          "total_tokens": 3252,
+          "run_id": "55c9e06aef474fa3",
+          "neatlogs_trace_id": null
+        },
+        {
+          "run": 2,
+          "passed": true,
+          "reason": "answered in 3 steps (limit 8)",
+          "failure_type": null,
+          "steps": 3,
+          "total_tokens": 3252,
+          "run_id": "e7373fdee7984271",
+          "neatlogs_trace_id": null
+        },
+        {
+          "run": 3,
+          "passed": true,
+          "reason": "answered in 3 steps (limit 8)",
+          "failure_type": null,
+          "steps": 3,
+          "total_tokens": 3252,
+          "run_id": "ee30f4fe54df420a",
+          "neatlogs_trace_id": null
+        }
+      ],
+      "passes": 3,
+      "ok": true
+    },
+    "wrong-args-gadgets": {
+      "runs": [
+        {
+          "run": 1,
+          "passed": true,
+          "reason": "all 2 tool calls schema-valid and answer == 159.98",
+          "failure_type": null,
+          "steps": 2,
+          "total_tokens": 3054,
+          "run_id": "ed5e3a8dcafc4c34",
+          "neatlogs_trace_id": null
+        },
+        {
+          "run": 2,
+          "passed": true,
+          "reason": "all 2 tool calls schema-valid and answer == 159.98",
+          "failure_type": null,
+          "steps": 2,
+          "total_tokens": 3054,
+          "run_id": "929872399096481d",
+          "neatlogs_trace_id": null
+        },
+        {
+          "run": 3,
+          "passed": true,
+          "reason": "all 2 tool calls schema-valid and answer == 159.98",
+          "failure_type": null,
+          "steps": 2,
+          "total_tokens": 3054,
+          "run_id": "ca52beb3019d46f9",
+          "neatlogs_trace_id": null
+        }
+      ],
+      "passes": 3,
+      "ok": true
+    },
+    "parse-error-solar": {
+      "runs": [
+        {
+          "run": 1,
+          "passed": true,
+          "reason": "survived the malformed payload and still answered 5,000.00",
+          "failure_type": null,
+          "steps": 2,
+          "total_tokens": 3059,
+          "run_id": "28bd784e70c24a8d",
+          "neatlogs_trace_id": null
+        },
+        {
+          "run": 2,
+          "passed": true,
+          "reason": "survived the malformed payload and still answered 5,000.00",
+          "failure_type": null,
+          "steps": 2,
+          "total_tokens": 3059,
+          "run_id": "57bc0518c3244cb5",
+          "neatlogs_trace_id": null
+        },
+        {
+          "run": 3,
+          "passed": true,
+          "reason": "survived the malformed payload and still answered 5,000.00",
+          "failure_type": null,
+          "steps": 2,
+          "total_tokens": 3059,
+          "run_id": "3f23aae17e53463c",
+          "neatlogs_trace_id": null
+        }
+      ],
+      "passes": 3,
+      "ok": true
+    },
+    "hallucinated-citation-servers": {
+      "runs": [
+        {
+          "run": 1,
+          "passed": false,
+          "reason": "1 cited URL(s) were never fetched",
+          "failure_type": "hallucinated_citation",
+          "steps": 2,
+          "total_tokens": 3098,
+          "run_id": "0844c6ee0e804ad3",
+          "neatlogs_trace_id": null
+        },
+        {
+          "run": 2,
+          "passed": false,
+          "reason": "1 cited URL(s) were never fetched",
+          "failure_type": "hallucinated_citation",
+          "steps": 2,
+          "total_tokens": 3098,
+          "run_id": "03bffa5c3da24b28",
+          "neatlogs_trace_id": null
+        },
+        {
+          "run": 3,
+          "passed": false,
+          "reason": "1 cited URL(s) were never fetched",
+          "failure_type": "hallucinated_citation",
+          "steps": 2,
+          "total_tokens": 3098,
+          "run_id": "00d49b7bde1142e2",
+          "neatlogs_trace_id": null
+        }
+      ],
+      "passes": 0,
+      "ok": false
+    },
+    "loop-strong-widgets": {
+      "runs": [
+        {
+          "run": 1,
+          "passed": true,
+          "reason": "answered in 3 steps (limit 8)",
+          "failure_type": null,
+          "steps": 3,
+          "total_tokens": 3252,
+          "run_id": "3d43361b85e94798",
+          "neatlogs_trace_id": null
+        },
+        {
+          "run": 2,
+          "passed": true,
+          "reason": "answered in 3 steps (limit 8)",
+          "failure_type": null,
+          "steps": 3,
+          "total_tokens": 3252,
+          "run_id": "a5131f436cfd4f1d",
+          "neatlogs_trace_id": null
+        },
+        {
+          "run": 3,
+          "passed": true,
+          "reason": "answered in 3 steps (limit 8)",
+          "failure_type": null,
+          "steps": 3,
+          "total_tokens": 3252,
+          "run_id": "bae95018cfcf4666",
+          "neatlogs_trace_id": null
+        }
+      ],
+      "passes": 3,
+      "ok": true
+    },
+    "loop-solar": {
+      "runs": [
+        {
+          "run": 1,
+          "passed": true,
+          "reason": "answered in 2 steps (limit 8)",
+          "failure_type": null,
+          "steps": 2,
+          "total_tokens": 2896,
+          "run_id": "94efeb6c84074e08",
+          "neatlogs_trace_id": null
+        },
+        {
+          "run": 2,
+          "passed": true,
+          "reason": "answered in 2 steps (limit 8)",
+          "failure_type": null,
+          "steps": 2,
+          "total_tokens": 2896,
+          "run_id": "6b5bb47ec4eb4257",
+          "neatlogs_trace_id": null
+        },
+        {
+          "run": 3,
+          "passed": true,
+          "reason": "answered in 2 steps (limit 8)",
+          "failure_type": null,
+          "steps": 2,
+          "total_tokens": 2896,
+          "run_id": "514f8a9abb664302",
+          "neatlogs_trace_id": null
+        }
+      ],
+      "passes": 3,
+      "ok": true
+    },
+    "loop-gadgets": {
+      "runs": [
+        {
+          "run": 1,
+          "passed": true,
+          "reason": "answered in 2 steps (limit 8)",
+          "failure_type": null,
+          "steps": 2,
+          "total_tokens": 3045,
+          "run_id": "675d573a940d48da",
+          "neatlogs_trace_id": null
+        },
+        {
+          "run": 2,
+          "passed": true,
+          "reason": "answered in 2 steps (limit 8)",
+          "failure_type": null,
+          "steps": 2,
+          "total_tokens": 3045,
+          "run_id": "29b843788e354b9e",
+          "neatlogs_trace_id": null
+        },
+        {
+          "run": 3,
+          "passed": true,
+          "reason": "answered in 2 steps (limit 8)",
+          "failure_type": null,
+          "steps": 2,
+          "total_tokens": 3045,
+          "run_id": "f79498e17e054536",
+          "neatlogs_trace_id": null
+        }
+      ],
+      "passes": 3,
+      "ok": true
+    },
+    "wrong-args-loop": {
+      "runs": [
+        {
+          "run": 1,
+          "passed": true,
+          "reason": "all 2 tool calls schema-valid and answer == 1,350.00",
+          "failure_type": null,
+          "steps": 2,
+          "total_tokens": 2915,
+          "run_id": "ad2ec1a4eab24b3f",
+          "neatlogs_trace_id": null
+        },
+        {
+          "run": 2,
+          "passed": true,
+          "reason": "all 2 tool calls schema-valid and answer == 1,350.00",
+          "failure_type": null,
+          "steps": 2,
+          "total_tokens": 2915,
+          "run_id": "48c0786550bf4d36",
+          "neatlogs_trace_id": null
+        },
+        {
+          "run": 3,
+          "passed": true,
+          "reason": "all 2 tool calls schema-valid and answer == 1,350.00",
+          "failure_type": null,
+          "steps": 2,
+          "total_tokens": 2915,
+          "run_id": "aa099e329d684286",
+          "neatlogs_trace_id": null
+        }
+      ],
+      "passes": 3,
+      "ok": true
+    },
+    "wrong-args-widgets": {
+      "runs": [
+        {
+          "run": 1,
+          "passed": false,
+          "reason": "final answer does not contain the known value 32,100.00",
+          "failure_type": "wrong_args",
+          "steps": 1,
+          "total_tokens": 1828,
+          "run_id": "3dedc02b65e34d88",
+          "neatlogs_trace_id": null
+        },
+        {
+          "run": 2,
+          "passed": false,
+          "reason": "final answer does not contain the known value 32,100.00",
+          "failure_type": "wrong_args",
+          "steps": 1,
+          "total_tokens": 1828,
+          "run_id": "7db41584cade4558",
+          "neatlogs_trace_id": null
+        },
+        {
+          "run": 3,
+          "passed": false,
+          "reason": "final answer does not contain the known value 32,100.00",
+          "failure_type": "wrong_args",
+          "steps": 1,
+          "total_tokens": 1828,
+          "run_id": "5d6c287f0bd44d4c",
+          "neatlogs_trace_id": null
+        }
+      ],
+      "passes": 0,
+      "ok": false
+    },
+    "parse-error-gadgets": {
+      "runs": [
+        {
+          "run": 1,
+          "passed": false,
+          "reason": "run did not recover to the known value 10.00",
+          "failure_type": "parse_error",
+          "steps": 1,
+          "total_tokens": 1849,
+          "run_id": "b6edd418d8104669",
+          "neatlogs_trace_id": null
+        },
+        {
+          "run": 2,
+          "passed": false,
+          "reason": "run did not recover to the known value 10.00",
+          "failure_type": "parse_error",
+          "steps": 1,
+          "total_tokens": 1849,
+          "run_id": "ef6de6885b824eec",
+          "neatlogs_trace_id": null
+        },
+        {
+          "run": 3,
+          "passed": false,
+          "reason": "run did not recover to the known value 10.00",
+          "failure_type": "parse_error",
+          "steps": 1,
+          "total_tokens": 1849,
+          "run_id": "09d709aee4d24d6a",
+          "neatlogs_trace_id": null
+        }
+      ],
+      "passes": 0,
+      "ok": false
+    },
+    "parse-error-widgets": {
+      "runs": [
+        {
+          "run": 1,
+          "passed": true,
+          "reason": "survived the malformed payload and still answered 12,840.00",
+          "failure_type": null,
+          "steps": 1,
+          "total_tokens": 1752,
+          "run_id": "206784151c31453c",
+          "neatlogs_trace_id": null
+        },
+        {
+          "run": 2,
+          "passed": true,
+          "reason": "survived the malformed payload and still answered 12,840.00",
+          "failure_type": null,
+          "steps": 1,
+          "total_tokens": 1752,
+          "run_id": "459aa88b1c6a4edf",
+          "neatlogs_trace_id": null
+        },
+        {
+          "run": 3,
+          "passed": true,
+          "reason": "survived the malformed payload and still answered 12,840.00",
+          "failure_type": null,
+          "steps": 1,
+          "total_tokens": 1752,
+          "run_id": "e7d3ad9f2ca24e83",
+          "neatlogs_trace_id": null
+        }
+      ],
+      "passes": 3,
+      "ok": true
+    },
+    "hallucinated-citation-solar": {
+      "runs": [
+        {
+          "run": 1,
+          "passed": false,
+          "reason": "1 cited URL(s) were never fetched",
+          "failure_type": "hallucinated_citation",
+          "steps": 2,
+          "total_tokens": 3193,
+          "run_id": "eb4c9a15654d44b8",
+          "neatlogs_trace_id": null
+        },
+        {
+          "run": 2,
+          "passed": false,
+          "reason": "1 cited URL(s) were never fetched",
+          "failure_type": "hallucinated_citation",
+          "steps": 2,
+          "total_tokens": 3193,
+          "run_id": "771b9bf98c264df4",
+          "neatlogs_trace_id": null
+        },
+        {
+          "run": 3,
+          "passed": false,
+          "reason": "1 cited URL(s) were never fetched",
+          "failure_type": "hallucinated_citation",
+          "steps": 2,
+          "total_tokens": 3193,
+          "run_id": "26fd70919fdb45c5",
+          "neatlogs_trace_id": null
+        }
+      ],
+      "passes": 0,
+      "ok": false
+    },
+    "hallucinated-citation-widgets": {
+      "runs": [
+        {
+          "run": 1,
+          "passed": true,
+          "reason": "all 1 cited URL(s) came from fetch_page in this run",
+          "failure_type": null,
+          "steps": 2,
+          "total_tokens": 3158,
+          "run_id": "4b088576a683488c",
+          "neatlogs_trace_id": null
+        },
+        {
+          "run": 2,
+          "passed": true,
+          "reason": "all 1 cited URL(s) came from fetch_page in this run",
+          "failure_type": null,
+          "steps": 2,
+          "total_tokens": 3158,
+          "run_id": "8fe36043d6474c18",
+          "neatlogs_trace_id": null
+        },
+        {
+          "run": 3,
+          "passed": true,
+          "reason": "all 1 cited URL(s) came from fetch_page in this run",
+          "failure_type": null,
+          "steps": 2,
+          "total_tokens": 3158,
+          "run_id": "566e00a6b51143d3",
+          "neatlogs_trace_id": null
+        }
+      ],
+      "passes": 3,
+      "ok": true
+    }
+  },
+  "tasks_failing": [
+    "hallucinated-citation-servers",
+    "wrong-args-widgets",
+    "parse-error-gadgets",
+    "hallucinated-citation-solar"
+  ],
+  "gate_passed": false,
+  "interpretation": "If the gate fails, the model is too weak for this work and no config patch is the answer. That is a stop-and-report, not a bug to heal."
+}

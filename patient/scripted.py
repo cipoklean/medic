@@ -378,7 +378,13 @@ def expression_for_question(text: str) -> str | None:
     if "three orbit" in low or "three months" in low:
         return "450.00*3"
     if "one case" in low or "case cost" in low:
-        return "169.98-(79.99*2)"
+        # 169.98 total minus ONE 79.99 gadget = 89.99.
+        # This was "169.98-(79.99*2)", which doubled the gadget price and
+        # produced 10.00 — and the task's expected_answer was written to match
+        # that wrong number, so the deterministic suite passed for years with
+        # an arithmetic error baked into both halves. A real model got 89.99
+        # and was failed by the check.
+        return "169.98-79.99"
     if "in cents" in low or "one unit cost" in low:
         return "128.40*100"
     if "two blue" in low:
