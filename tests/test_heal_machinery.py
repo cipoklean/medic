@@ -71,12 +71,13 @@ def test_trace_local_fallback_always_works() -> list[str]:
     rec.write({"result": {"answer": "x"}, "bug": "loop"})
     trace = load_trace(rec.run_id)
     if trace is None:
-        return ["local trace fallback failed"]
+        assert False, "local trace fallback failed"
     if trace.source != "local":
         problems.append(f"expected source=local, got {trace.source}")
     if not trace.spans:
         problems.append("trace has no spans")
-    return problems
+    assert not problems, problems
+    return []
 
 
 def test_deterministic_patch_satisfies_all_checks() -> list[str]:
@@ -101,7 +102,8 @@ def test_deterministic_patch_satisfies_all_checks() -> list[str]:
             if held < 2:
                 problems.append(f"{bug}: healed with only {held} held-out task(s)")
     reset_bug()
-    return problems
+    assert not problems, problems
+    return []
 
 
 def test_patch_allowlist() -> list[str]:
@@ -131,7 +133,8 @@ def test_patch_allowlist() -> list[str]:
         problems.append("type check accepted an empty system_prompt")
     except surg.PatchRefused:
         pass
-    return problems
+    assert not problems, problems
+    return []
 
 
 def test_patch_does_not_mutate_and_roundtrips() -> list[str]:
@@ -150,7 +153,8 @@ def test_patch_does_not_mutate_and_roundtrips() -> list[str]:
         yaml.safe_dump(new)
     except Exception as exc:
         problems.append(f"patched config does not round-trip through YAML: {exc}")
-    return problems
+    assert not problems, problems
+    return []
 
 
 def test_clean_config_is_untouched_by_healing() -> list[str]:
@@ -165,7 +169,8 @@ def test_clean_config_is_untouched_by_healing() -> list[str]:
 
     if current_config() != clean_config():
         problems.append("reset_bug did not restore the clean baseline exactly")
-    return problems
+    assert not problems, problems
+    return []
 
 
 def test_no_llm_is_used_in_this_path() -> list[str]:

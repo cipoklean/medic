@@ -53,11 +53,14 @@ def doctor() -> None:
     table.add_column("check")
     table.add_column("result")
     ingest = get("NEATLOGS_API_KEY")
-    token = get("NEATLOGS_TOKEN")
-    project = get("NEATLOGS_PROJECT_ID")
-    table.add_row("NEATLOGS_API_KEY (ingest)", "[green]set[/green]" if ingest else "[yellow]missing[/yellow]")
-    table.add_row("NEATLOGS_TOKEN (read)", "[green]set[/green]" if token else "[yellow]missing, API read disabled[/yellow]")
-    table.add_row("NEATLOGS_PROJECT_ID", "[green]set[/green]" if project else "[yellow]missing[/yellow]")
+    # The ingest key IS the read key: GET /api/traces/v3/<id> authenticates with
+    # x-api-key: NEATLOGS_API_KEY, verified live. There is no separate
+    # service-account credential, so NEATLOGS_TOKEN and NEATLOGS_PROJECT_ID
+    # were removed from .env.example and from this table.
+    if ingest:
+        table.add_row("neatlogs", "[green]API read: enabled via x-api-key[/green]")
+    else:
+        table.add_row("neatlogs", "[yellow]missing, API read disabled[/yellow]")
     s = llm_settings()
     table.add_row(
         "LLM (base/model)",
@@ -110,8 +113,8 @@ def doctor() -> None:
         _warn("LLM not configured, offline scripted mode only (set LLM_BASE_URL/LLM_API_KEY/LLM_MODEL)")
 
     console.print(
-        "\n[dim]Read-back of traces needs a service-account token, which is NOT the "
-        "ingest key. Medic falls back to runs/<id>.json automatically.[/dim]"
+        "\n[dim]Medic reads traces back over GET /api/traces/v3/<id> with the "
+        "same key, and falls back to runs/<id>.json when the API is down.[/dim]"
     )
 
 

@@ -39,6 +39,12 @@ heal still works, but the costs below are measured with the patient pinned.
 You will see a red failing run, a diagnosis naming the broken span, a one-line
 diff, a green re-run, a held-out results table, and the cost of the repair.
 
+The suites need no key and no network:
+
+```bash
+.venv/bin/python -m pytest tests/ -q
+```
+
 No Streamlit. No web server. The agent's tools never touch the network.
 
 **The scripted path cannot heal.** `--llm scripted` works for `run`, `report` and

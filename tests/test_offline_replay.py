@@ -139,8 +139,16 @@ def test_build_client_forwards_the_role():
     """
     import os
 
+    # Every variable this test needs is set here, so it passes on a fresh clone
+    # with NO .env. It previously read LLM_PROVIDER_CHAIN from the environment,
+    # so a stale value (or the old "nara,groq" default) decided the outcome and
+    # the test failed on a clean checkout for reasons unrelated to the code.
+    os.environ["LLM_PROVIDER_CHAIN"] = "litellm,gemini"
     os.environ["LLM_API_KEY_LITELLM"] = "sk-test-not-real"
+    os.environ["LLM_API_KEY_GEMINI"] = "sk-test-not-real"
+    os.environ["LLM_MODEL_GEMINI"] = "gemini-3.1-flash-lite"
     os.environ["LLM_MODEL_LITELLM_PATIENT"] = "nova-micro"
+    os.environ.pop("LLM_MODEL_LITELLM", None)
     from medic import providers as prov
 
     for role, want in (("patient", "nova-micro"), ("medic", "claude-sonnet-4.6")):
@@ -160,8 +168,16 @@ def test_chain_and_build_client_agree():
     """
     import os
 
+    # Every variable this test needs is set here, so it passes on a fresh clone
+    # with NO .env. It previously read LLM_PROVIDER_CHAIN from the environment,
+    # so a stale value (or the old "nara,groq" default) decided the outcome and
+    # the test failed on a clean checkout for reasons unrelated to the code.
+    os.environ["LLM_PROVIDER_CHAIN"] = "litellm,gemini"
     os.environ["LLM_API_KEY_LITELLM"] = "sk-test-not-real"
+    os.environ["LLM_API_KEY_GEMINI"] = "sk-test-not-real"
+    os.environ["LLM_MODEL_GEMINI"] = "gemini-3.1-flash-lite"
     os.environ["LLM_MODEL_LITELLM_PATIENT"] = "nova-micro"
+    os.environ.pop("LLM_MODEL_LITELLM", None)
     from medic import providers as prov
 
     for role in prov.ROLE_MODELS:

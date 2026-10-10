@@ -190,7 +190,7 @@ def chain(role: str = "patient") -> list[Provider]:
     "openrouter" actually hit Groq and produced a plausible, wrong result. A
     measurement attributed to the wrong host is worse than no measurement.
     """
-    raw = get("LLM_PROVIDER_CHAIN", "nara,groq")
+    raw = get("LLM_PROVIDER_CHAIN", "litellm,gemini")
     order = [p.strip() for p in raw.split(",") if p.strip()]
 
     out: list[Provider] = []
@@ -260,9 +260,9 @@ def build_client(preferred: str | None = None, role: str = "patient"):
     if not providers:
         raise NoProviderConfigured(
             "No LLM provider configured. Set one of:\n"
-            "  NaraRouter: LLM_API_KEY_NARA, LLM_BASE_URL_NARA, LLM_MODEL_NARA\n"
-            "  Groq:      LLM_API_KEY, LLM_BASE_URL, LLM_MODEL\n"
-            "and optionally LLM_PROVIDER_CHAIN='nara,groq' to order them."
+            "  LiteLLM:   LLM_API_KEY_LITELLM (model picked by role)\n"
+            "  Gemini:    LLM_API_KEY_GEMINI, LLM_MODEL_GEMINI\n"
+            "and optionally LLM_PROVIDER_CHAIN='litellm,gemini' to order them."
         )
     p = providers[0]
     return OpenAI(base_url=p.base_url, api_key=p.api_key), p
