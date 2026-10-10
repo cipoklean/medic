@@ -1,0 +1,138 @@
+{
+  "claim": "A real LLM diagnosed the failing trace and proposed a medic.yaml patch that cleared the train task AND every held-out task.",
+  "bug": "hallucinated_citation",
+  "before": {
+    "run_id": "bc7ce6c89419456d",
+    "neatlogs_trace_id": "47dd6b214ff5e31c48b53c86a75a30a5",
+    "local_trace": "runs/bc7ce6c89419456d.json",
+    "passed": false,
+    "failure_type": "hallucinated_citation",
+    "reason": "1 cited URL(s) were never fetched",
+    "details": [
+      "cited but not fetched: https://example.com/orbit-pricing."
+    ],
+    "metrics": {
+      "run_id": "bc7ce6c89419456d",
+      "passed_answer": true,
+      "steps": 3,
+      "prompt_tokens": 4276,
+      "completion_tokens": 335,
+      "total_tokens": 4611,
+      "spans": 8,
+      "errors": 0,
+      "latency_ms": 4234.51,
+      "est_cost_usd": 0.017853,
+      "stopped_because": "final_answer",
+      "error": null
+    },
+    "tools_used": [
+      "web_search",
+      "fetch_page",
+      "calculator"
+    ],
+    "readback": {
+      "ok": false,
+      "why": "read-back failed (local file still exists)"
+    }
+  },
+  "attempts": [
+    {
+      "attempt": 1,
+      "diagnosis": {
+        "failing_span_id": "cb29598493c04a65",
+        "failure_type": "hallucinated_citation",
+        "evidence": "llm_call_4 output cites 'https://example.com/orbit-pricing' as source, and the system prompt explicitly permits this with: 'If you did not fetch a page, you may still cite the URL from the search result. Use your judgement about what is worth citing.'",
+        "root_cause": "The system prompt explicitly permits the agent to cite URLs from search results without having fetched them ('If you did not fetch a page, you may still cite the URL from the search result'), which licenses hallucinated citations.",
+        "confidence": 0.82
+      },
+      "patch": {
+        "field": "system_prompt",
+        "new_value": "You are a research agent. Answer the user's question using the available tools.\n\nMethod:\n1. Call web_search to find candidate sources.\n2. Call fetch_page on the most relevant URL to read its actual contents.\n3. Call calculator for any arithmetic. The expression argument must be a\n   plain arithmetic expression such as \"128.4 * 3\" or \"(1200 - 340) / 2\".\n4. Once you have the evidence and the computed value, stop and give a final\n   answer.\n\nStop rule: as soon as you can answer, stop calling tools and answer.\nNever make more than two web_search calls for one question.\n\nCitation rule: you may ONLY cite URLs that you have actually fetched with fetch_page. Never cite a URL that you have not fetched.",
+        "rationale": "Removing the explicit permission to cite unfetched URLs and replacing it with a strict rule that only fetched URLs may be cited prevents hallucinated citations."
+      },
+      "refused": null,
+      "error": null,
+      "llm_metrics": {
+        "provider": "litellm",
+        "provider_label": "litellm:claude-sonnet-4.6",
+        "model": "claude-sonnet-4.6",
+        "prompt_tokens": 1708,
+        "completion_tokens": 548,
+        "reasoning_tokens": 0,
+        "total_tokens": 2256,
+        "max_tokens_budget": 8000
+      },
+      "diff": "--- medic.yaml (before)\n+++ medic.yaml (after)\n@@ -7,9 +7,8 @@\n   \\ such as \\\"128.4 * 3\\\" or \\\"(1200 - 340) / 2\\\".\\n4. Once you have the evidence\\\n   \\ and the computed value, stop and give a final\\n   answer.\\n\\nStop rule: as soon\\\n   \\ as you can answer, stop calling tools and answer.\\nNever make more than two web_search\\\n-  \\ calls for one question.\\n\\nCite what you know. If you did not fetch a page, you\\\n-  \\ may still cite the URL\\nfrom the search result. Use your judgement about what\\\n-  \\ is worth citing.\"\n+  \\ calls for one question.\\n\\nCitation rule: you may ONLY cite URLs that you have\\\n+  \\ actually fetched with fetch_page. Never cite a URL that you have not fetched.\"\n tools:\n   calculator:\n     description: Evaluate arithmetic. Pass a single arithmetic expression with numbers\n",
+      "verify": {
+        "train": {
+          "task_id": "hallucinated-citation-servers",
+          "passed": true,
+          "steps": 3,
+          "total_tokens": 4580,
+          "reason": "all 1 cited URL(s) came from fetch_page in this run"
+        },
+        "heldout": [
+          {
+            "task_id": "hallucinated-citation-solar",
+            "passed": true,
+            "steps": 2,
+            "total_tokens": 3237,
+            "reason": "all 1 cited URL(s) came from fetch_page in this run"
+          },
+          {
+            "task_id": "hallucinated-citation-widgets",
+            "passed": true,
+            "steps": 2,
+            "total_tokens": 3252,
+            "reason": "all 1 cited URL(s) came from fetch_page in this run"
+          }
+        ],
+        "all_passed": true
+      }
+    }
+  ],
+  "healed": true,
+  "after": {
+    "system_prompt": "You are a research agent. Answer the user's question using the available tools.\n\nMethod:\n1. Call web_search to find candidate sources.\n2. Call fetch_page on the most relevant URL to read its actual contents.\n3. Call calculator for any arithmetic. The expression argument must be a\n   plain arithmetic expression such as \"128.4 * 3\" or \"(1200 - 340) / 2\".\n4. Once you have the evidence and the computed value, stop and give a final\n   answer.\n\nStop rule: as soon as you can answer, stop calling tools and answer.\nNever make more than two web_search calls for one question.\n\nCitation rule: you may ONLY cite URLs that you have actually fetched with fetch_page. Never cite a URL that you have not fetched.",
+    "tools": {
+      "web_search": {
+        "description": "Search the web for sources. Pass a short topical query string."
+      },
+      "fetch_page": {
+        "description": "Fetch and read a page. Pass the exact URL returned by web_search."
+      },
+      "calculator": {
+        "description": "Evaluate arithmetic. Pass a single arithmetic expression with numbers and operators, e.g. \"(128.4 * 3) + 20\"."
+      }
+    },
+    "max_steps": 8,
+    "retry_on_parse_error": false
+  },
+  "clean_control": {
+    "run_id": "98cbf16224364c5b",
+    "neatlogs_trace_id": "4a760552029b21a1fcd20a93a27f2224",
+    "passed": true,
+    "metrics": {
+      "run_id": "98cbf16224364c5b",
+      "passed_answer": true,
+      "steps": 3,
+      "prompt_tokens": 4324,
+      "completion_tokens": 289,
+      "total_tokens": 4613,
+      "spans": 8,
+      "errors": 0,
+      "latency_ms": 3130.55,
+      "est_cost_usd": 0.017307,
+      "stopped_because": "final_answer",
+      "error": null
+    },
+    "readback": {
+      "ok": false,
+      "why": "read-back failed (local file still exists)"
+    }
+  },
+  "heldout_task_ids": [
+    "hallucinated-citation-solar",
+    "hallucinated-citation-widgets"
+  ]
+}

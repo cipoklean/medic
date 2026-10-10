@@ -161,9 +161,46 @@
       "reproduces": true,
       "note": "2 of 3 runs, same wrong_args fault as nova-micro and never a loop. Two of the three runs answered in ZERO tool calls - it went straight to a wrong final number without searching at all, which is a different failure again from either a loop or a bad argument.",
       "measured": "2026-10-10, evidence/repro_nova_loop.json"
+    },
+    {
+      "model": "nova-micro",
+      "provider": "litellm (bedrock)",
+      "preset": "hallucinated_citation (original)",
+      "clean": {
+        "passed": true,
+        "steps": "3",
+        "tokens": "4,613"
+      },
+      "buggy": {
+        "passed": false,
+        "steps": "3",
+        "tokens": "4,611",
+        "failure_type": "hallucinated_citation"
+      },
+      "reproduces": true,
+      "note": "3/3 runs. The preset is UNMODIFIED and was not strengthened. cited=1 fetched=1, and the cited URL was never fetched in that run. Healed live by Sonnet in 1 attempt: patch=system_prompt, train PASS, both held-out PASS, \\$0.016347 total. Diagnosed at high confidence by quoting the exact prompt line that licensed the bug.",
+      "measured": "2026-10-10, evidence/repro_citation_nova_micro.json + real_heal_loop_hallucinated_citation.json"
+    },
+    {
+      "model": "nova-lite",
+      "provider": "litellm (bedrock)",
+      "preset": "hallucinated_citation (original)",
+      "clean": {
+        "passed": true,
+        "steps": "3",
+        "tokens": "4,394"
+      },
+      "buggy": {
+        "passed": true,
+        "steps": "3",
+        "tokens": "4,377"
+      },
+      "reproduces": false,
+      "note": "Passes on the buggy preset, so the bug is model-specific: nova-micro obeys the licence to cite unfetched URLs, nova-lite fetches before citing. Same prompt, same fixtures, different model, different outcome.",
+      "measured": "2026-10-10, probe_real_heal.py baseline"
     }
   ],
-  "finding": "The buggy prompt reliably costs these models one extra search and 400-1,400 extra tokens \u2014 the budget pressure is visible \u2014 but none of them runs away. gpt-oss-20b is the only one that exceeds the step limit, by 50%. The SAME model name on a DIFFERENT host fails differently: 12-step overrun on groq, single empty response on openrouter. Pinned routing to the same upstream still changed the outcome (12 steps FAIL direct, 7 steps PASS via OpenRouter), so the route is part of the system under test. The nova models reproduce the original loop preset as a WRONG-ARGS fault, not a loop: bounded runs with wrong numbers. The loop check was mislabelling them, and the relabel is in the evidence.",
+  "finding": "The buggy prompt reliably costs these models one extra search and 400-1,400 extra tokens \u2014 the budget pressure is visible \u2014 but none of them runs away. gpt-oss-20b is the only one that exceeds the step limit, by 50%. The SAME model name on a DIFFERENT host fails differently: 12-step overrun on groq, single empty response on openrouter. Pinned routing to the same upstream still changed the outcome (12 steps FAIL direct, 7 steps PASS via OpenRouter), so the route is part of the system under test. The nova models reproduce the original loop preset as a WRONG-ARGS fault, not a loop: bounded runs with wrong numbers. The loop check was mislabelling them, and the relabel is in the evidence. hallucinated_citation is a SECOND live heal: reproduces 3/3 on nova-micro with the unmodified preset, healed by Sonnet in one attempt.",
   "interpretation": "This is a capability difference, not a fluke. A model that keeps re-searching despite an explicit licence to stop has weaker instruction-following on termination. It does NOT mean the loop bug is fake: it reproduces on the one model tested that misbehaves, it reproduces deterministically with the scripted agent, and a real deployment would run a spread of models including weaker ones.",
   "consequence_for_the_demo": "The demo needs a genuine, REPRODUCIBLE failure. groq gives a 12-step overrun that is easy to show and easy to fix (6 steps after). OpenRouter's empty response is also a real fault but is a worse demo: it ends in one step, so there is no visible runaway behaviour, and it may not recur on every run. Use groq for the demo take; keep openrouter as the same-model fallback for when groq's daily budget is exhausted, and be explicit on camera about which provider served the run.",
   "cost_of_this_choice": "Groq's free tier is 200,000 tokens/day and a looping run alone costs ~23,000 of it. A single demo day of rehearsals could exhaust the budget. This is the single largest demo-day risk and is recorded as such.",
