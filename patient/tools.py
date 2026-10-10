@@ -13,6 +13,7 @@ from __future__ import annotations
 import ast
 import json
 import operator
+import re
 from pathlib import Path
 from typing import Any, Callable
 
@@ -43,10 +44,48 @@ def _slug(text: str) -> str:
 
 
 def _load_search(query: str) -> dict | None:
-    path = SEARCH_DIR / f"{_slug(query)}.json"
-    if not path.exists():
+    """Resolve a query to a stored search result.
+
+    EXACT slug match first, then a scored keyword overlap. Exact-only lookup
+    works for the scripted agent because it emits fixture keys verbatim, but a
+    REAL model writes natural queries ("ACME Corp standard widgets volume
+    discount price per widget") that never equal a filename. With exact-only
+    matching every real query returns "no results" and the agent burns its
+    whole step budget hunting — a harness failure that reads like a model
+    failure.
+
+    Scoring is deterministic: token overlap, no randomness, no network.
+    """
+    direct = SEARCH_DIR / f"{_slug(query)}.json"
+    if direct.exists():
+        return json.loads(direct.read_text())
+
+    best, best_score = None, 0
+    q_tokens = [t for t in re.split(r"[^a-z0-9]+", query.lower()) if len(t) > 2]
+    if not q_tokens:
         return None
-    return json.loads(path.read_text())
+    for path in sorted(SEARCH_DIR.glob("*.json")):
+        try:
+            data = json.loads(path.read_text())
+        except json.JSONDecodeError:
+            continue
+        haystack = path.stem.replace("_", " ")
+        haystack += " " + " ".join(
+            f"{r.get('title','')} {r.get('snippet','')}" for r in data.get("results", [])
+        ).lower()
+        hay_tokens = set(re.split(r"[^a-z0-9]+", haystack.lower()))
+        score = sum(1 for t in q_tokens if t in hay_tokens)
+        # Prefer the candidate sharing the most query terms; ties break on the
+        # fixture name so the result never depends on directory ordering.
+        better = score > best_score
+        tie = score == best_score and score > 0 and best is not None and path.stem < best[0]
+        if better or tie:
+            best, best_score = (path.stem, data), score
+    if best_score <= 0:
+        return None
+    data = dict(best[1])
+    data["matched_fixture"] = best[0]
+    return data
 
 
 def _load_page(url: str) -> str | None:
