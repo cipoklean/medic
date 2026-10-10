@@ -1,0 +1,424 @@
+#!/usr/bin/env python3
+"""entire-agent-hermes — an Entire agent integration for Hermes.
+
+Hermes is not one of Entire's eight built-in agents, so this implements the
+documented Agent Integration Protocol (protocol_version 1) as an executable
+named `entire-agent-hermes`.
+
+Where Hermes keeps what it needs (verified by reading ~/.hermes on disk, not
+by guessing):
+
+  * conversation transcript -> ~/.hermes/state.db, table `messages`
+      (id, session_id, role, content, tool_calls, tool_name, timestamp)
+  * session metadata        -> table `sessions`
+      (id, title, cwd, git_repo_root, git_branch, message_count,
+       tool_call_count, input_tokens, output_tokens, api_call_count, ...)
+  * per-model token usage   -> table `session_model_usage`
+
+The DB is opened READ-ONLY. This process runs inside a repository hook and must
+never be able to mutate Hermes state.
+
+Capabilities are deliberately minimal and honest: transcript_analyzer and
+token_calculator are real (they read the tables above). hooks, preparer,
+generator and subagent extraction are NOT declared, because there is no
+reliable Hermes lifecycle hook that fires around an arbitrary coding session —
+declaring them would make Entire call into behaviour that does not exist.
+
+Implementation notes that cost time and are worth keeping:
+  * `sessions` has no `session_id` column; the primary key is `id`.
+  * `tool_calls` may be NULL for non-assistant rows, so every read is guarded.
+  * `content` on tool rows is the tool RESULT; the arguments live in
+    `tool_calls` on the preceding assistant row. Modified-file extraction has
+    to pair them, not read a single column.
+"""
+from __future__ import annotations
+
+import json
+import os
+import sqlite3
+import sys
+from pathlib import Path
+
+PROTOCOL_VERSION = 1
+NAME = "hermes"
+AGENT_HOME = Path(os.environ.get("HERMES_HOME", Path.home() / ".hermes"))
+STATE_DB = AGENT_HOME / "state.db"
+PROTECTED_DIRS = [".hermes"]
+
+NOOP_TRANSCRIPT = b""
+
+
+def _err(msg: str) -> int:
+    print(f"entire-agent-hermes: {msg}", file=sys.stderr)
+    return 1
+
+
+def _out(obj) -> int:
+    json.dump(obj, sys.stdout)
+    sys.stdout.write("\n")
+    return 0
+
+
+def _db() -> sqlite3.Connection:
+    if not STATE_DB.exists():
+        raise FileNotFoundError(str(STATE_DB))
+    uri = f"file:{STATE_DB}?mode=ro"
+    conn = sqlite3.connect(uri, uri=True, timeout=5.0)
+    conn.row_factory = sqlite3.Row
+    return conn
+
+
+def _stdin_json() -> dict:
+    raw = sys.stdin.read()
+    if not raw.strip():
+        return {}
+    try:
+        data = json.loads(raw)
+    except json.JSONDecodeError:
+        return {}
+    return data if isinstance(data, dict) else {}
+
+
+def _flag(name: str, default: str | None = None) -> str | None:
+    prefix = f"--{name}"
+    argv = sys.argv[1:]
+    for i, a in enumerate(argv):
+        if a == prefix and i + 1 < len(argv):
+            return argv[i + 1]
+        if a.startswith(f"{prefix}="):
+            return a.split("=", 1)[1]
+    return default
+
+
+# ── required commands ────────────────────────────────────────────────────
+
+def cmd_info() -> int:
+    return _out(
+        {
+            "protocol_version": PROTOCOL_VERSION,
+            "name": NAME,
+            "type": "Hermes",
+            "description": "Hermes Agent - general-purpose autonomous agent (Nous Research)",
+            "is_preview": True,
+            "protected_dirs": PROTECTED_DIRS,
+            "hook_names": [],
+            "capabilities": {
+                "hooks": False,
+                "transcript_analyzer": True,
+                "transcript_preparer": False,
+                "token_calculator": True,
+                "text_generator": False,
+                "hook_response_writer": False,
+                "subagent_aware_extractor": False,
+            },
+        }
+    )
+
+
+def cmd_detect() -> int:
+    home_ok = STATE_DB.exists()
+    hermes_bin = any(
+        (p / "hermes").exists() for p in [Path.home() / ".local/bin", Path("/usr/local/bin"), Path("/usr/bin")]
+    )
+    return _out({"present": bool(home_ok and hermes_bin)})
+
+
+def cmd_get_session_id() -> int:
+    event = _stdin_json()
+    sid = event.get("session_id") or event.get("sessionId")
+    if not sid:
+        for key in ("hook_input", "session", "data"):
+            nested = event.get(key)
+            if isinstance(nested, dict) and (nested.get("session_id") or nested.get("id")):
+                sid = nested.get("session_id") or nested.get("id")
+                break
+    if not sid:
+        return _out({"session_id": ""})
+    return _out({"session_id": str(sid)})
+
+
+def cmd_get_session_dir() -> int:
+    return _out({"session_dir": str(STATE_DB.parent)})
+
+
+def cmd_resolve_session_file() -> int:
+    sid = _flag("session-id", "") or ""
+    return _out({"session_file": f"{STATE_DB}#{sid}"})
+
+
+def cmd_read_session() -> int:
+    """Hermes has no separate per-session file: the DB *is* the store."""
+    sid = _stdin_json().get("session_id", "") or ""
+    try:
+        with _db() as conn:
+            row = conn.execute(
+                "SELECT * FROM sessions WHERE id = ?", (sid,)
+            ).fetchone()
+    except Exception as exc:
+        return _err(f"read-session failed: {exc}")
+    if row is None:
+        return _out({})
+    session = {k: row[k] for k in row.keys()}
+    session["session_id"] = sid
+    session["raw"] = json.loads(_transcript_for(sid))
+    return _out(session)
+
+
+def cmd_write_session() -> int:
+    """Hermes owns its own persistence. Refusing is correct, not a gap."""
+    _stdin_json()
+    return 0
+
+
+def _transcript_for(sid: str) -> str:
+    """JSONL transcript of one session, Hermes messages verbatim."""
+    try:
+        with _db() as conn:
+            rows = conn.execute(
+                "SELECT id, role, content, tool_calls, tool_name, timestamp "
+                "FROM messages WHERE session_id = ? ORDER BY id",
+                (sid,),
+            ).fetchall()
+    except Exception:
+        return json.dumps([])
+    out = []
+    for r in rows:
+        entry = {
+            "id": r["id"],
+            "role": r["role"],
+            "content": r["content"] or "",
+            "timestamp": r["timestamp"],
+        }
+        if r["tool_name"]:
+            entry["tool_name"] = r["tool_name"]
+        if r["tool_calls"]:
+            try:
+                entry["tool_calls"] = json.loads(r["tool_calls"])
+            except (json.JSONDecodeError, TypeError):
+                entry["tool_calls"] = r["tool_calls"]
+        out.append(json.dumps(entry))
+    return "\n".join(out)
+
+
+def cmd_read_transcript() -> int:
+    sid = _flag("session-ref", "") or ""
+    ref = sid.split("#")[-1] if "#" in sid else sid
+    data = _transcript_for(ref)
+    sys.stdout.buffer.write(data.encode())
+    return 0
+
+
+def cmd_chunk_transcript() -> int:
+    raw = sys.stdin.buffer.read()
+    size = int(_flag("max-size", "1048576") or 1048576)
+    chunks = [raw[i : i + size] for i in range(0, len(raw), size)] or [b""]
+    return _out({"chunks": [c.hex() for c in chunks]})
+
+
+def cmd_reassemble_transcript() -> int:
+    data = _stdin_json()
+    chunks = data.get("chunks") or []
+    buf = bytearray()
+    for c in chunks:
+        try:
+            buf.extend(bytes.fromhex(c))
+        except ValueError:
+            buf.extend(c.encode() if isinstance(c, str) else b"")
+    sys.stdout.buffer.write(bytes(buf))
+    return 0
+
+
+def cmd_format_resume_command() -> int:
+    sid = _flag("session-id", "") or ""
+    return _out({"command": f"hermes --resume {sid}"})
+
+
+# ── transcript_analyzer ──────────────────────────────────────────────────
+
+def _messages(sid: str):
+    with _db() as conn:
+        return conn.execute(
+            "SELECT id, role, content, tool_calls, tool_name FROM messages "
+            "WHERE session_id = ? ORDER BY id",
+            (sid,),
+        ).fetchall()
+
+
+def cmd_get_transcript_position() -> int:
+    ref = (_flag("path", "") or "").split("#")[-1]
+    try:
+        data = _transcript_for(ref).encode()
+    except Exception:
+        data = b""
+    return _out({"position": len(data)})
+
+
+def cmd_extract_modified_files() -> int:
+    """Tool calls that write files, paired from assistant `tool_calls`."""
+    ref = (_flag("path", "") or "").split("#")[-1]
+    offset = int(_flag("offset", "0") or 0)
+    files: list[str] = set()
+    try:
+        for row in _messages(ref):
+            if not row["tool_calls"]:
+                continue
+            try:
+                calls = json.loads(row["tool_calls"])
+            except (json.JSONDecodeError, TypeError):
+                continue
+            if isinstance(calls, dict):
+                calls = [calls]
+            for call in calls:
+                name = (call.get("function", {}) or {}).get("name", "")
+                if name not in ("write_file", "patch", "terminal", "execute_code"):
+                    continue
+                args = (call.get("function", {}) or {}).get("arguments") or "{}"
+                try:
+                    parsed = json.loads(args) if isinstance(args, str) else (args or {})
+                except json.JSONDecodeError:
+                    continue
+                path = parsed.get("path")
+                if isinstance(path, str) and path:
+                    files.add(path)
+    except Exception:
+        pass
+    position = len(_transcript_for(ref).encode())
+    return _out({"files": sorted(files), "current_position": position})
+
+
+def cmd_extract_prompts() -> int:
+    ref = (_flag("session-ref", "") or "").split("#")[-1]
+    offset = int(_flag("offset", "0") or 0)
+    prompts = []
+    try:
+        for row in _messages(ref):
+            if row["role"] == "user" and row["content"]:
+                prompts.append(row["content"])
+    except Exception:
+        pass
+    return _out({"prompts": prompts})
+
+
+def cmd_extract_summary() -> int:
+    ref = (_flag("session-ref", "") or "").split("#")[-1]
+    title = ""
+    try:
+        with _db() as conn:
+            row = conn.execute(
+                "SELECT title FROM sessions WHERE id = ?", (ref,)
+            ).fetchone()
+            if row and row["title"]:
+                title = row["title"]
+    except Exception:
+        pass
+    if not title:
+        return _out({"summary": "", "has_summary": False})
+    return _out({"summary": title, "has_summary": True})
+
+
+# ── token_calculator ─────────────────────────────────────────────────────
+
+def cmd_calculate_tokens() -> int:
+    """Hermes counts tokens per model in session_model_usage — read the real
+    numbers rather than estimating from bytes."""
+    offset = int(_flag("offset", "0") or 0)
+    try:
+        ref = (sys.argv[0] or "")
+    except Exception:
+        ref = ""
+    sid = ""
+    argv = sys.argv[1:]
+    for i, a in enumerate(argv):
+        if a in ("--session-ref", "--session-id") and i + 1 < len(argv):
+            sid = argv[i + 1]
+        elif a.startswith("--session-ref="):
+            sid = a.split("=", 1)[1]
+    if not sid:
+        try:
+            rows = json.loads(sys.stdin.read() or "{}")
+            sid = rows.get("session_id", "")
+        except Exception:
+            sid = ""
+    sid = sid.split("#")[-1] if "#" in sid else sid
+
+    inp = out = calls = 0
+    try:
+        with _db() as conn:
+            for row in conn.execute(
+                "SELECT input_tokens, output_tokens, api_call_count "
+                "FROM session_model_usage WHERE session_id = ?",
+                (sid,),
+            ):
+                inp += row["input_tokens"] or 0
+                out += row["output_tokens"] or 0
+                calls += row["api_call_count"] or 0
+    except Exception:
+        pass
+    return _out(
+        {
+            "input_tokens": inp,
+            "output_tokens": out,
+            "cache_creation_tokens": 0,
+            "cache_read_tokens": 0,
+            "api_call_count": calls,
+        }
+    )
+
+
+def cmd_parse_hook() -> int:
+    # hooks capability is not declared; parse-hook is never called.
+    sys.stdout.write("null\n")
+    return 0
+
+
+def cmd_install_hooks() -> int:
+    return _out({"hooks_installed": 0})
+
+
+def cmd_uninstall_hooks() -> int:
+    return 0
+
+
+def cmd_are_hooks_installed() -> int:
+    return _out({"installed": False})
+
+
+COMMANDS = {
+    "info": cmd_info,
+    "detect": cmd_detect,
+    "get-session-id": cmd_get_session_id,
+    "get-session-dir": cmd_get_session_dir,
+    "resolve-session-file": cmd_resolve_session_file,
+    "read-session": cmd_read_session,
+    "write-session": cmd_write_session,
+    "read-transcript": cmd_read_transcript,
+    "chunk-transcript": cmd_chunk_transcript,
+    "reassemble-transcript": cmd_reassemble_transcript,
+    "format-resume-command": cmd_format_resume_command,
+    "parse-hook": cmd_parse_hook,
+    "install-hooks": cmd_install_hooks,
+    "uninstall-hooks": cmd_uninstall_hooks,
+    "are-hooks-installed": cmd_are_hooks_installed,
+    "get-transcript-position": cmd_get_transcript_position,
+    "extract-modified-files": cmd_extract_modified_files,
+    "extract-prompts": cmd_extract_prompts,
+    "extract-summary": cmd_extract_summary,
+    "calculate-tokens": cmd_calculate_tokens,
+}
+
+
+def main() -> int:
+    if len(sys.argv) < 2:
+        return _err("no subcommand given")
+    sub = sys.argv[1]
+    fn = COMMANDS.get(sub)
+    if fn is None:
+        return _err(f"unknown subcommand {sub!r}; known: {', '.join(sorted(COMMANDS))}")
+    try:
+        return fn()
+    except Exception as exc:
+        return _err(f"{sub} raised {type(exc).__name__}: {exc}")
+
+
+if __name__ == "__main__":
+    sys.exit(main())
