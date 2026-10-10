@@ -15,34 +15,24 @@ import time
 import re
 from typing import Any
 
-from patient.config import llm_configured, llm_settings
 from patient.tracing import init_neatlogs, neatlogs_active
 
 
 class MedicLLMUnavailable(RuntimeError):
-    pass
+    """Raised when no provider is configured at all (see providers.NoProviderConfigured)."""
 
 
 def _client():
-    if not llm_configured():
-        raise MedicLLMUnavailable(
-            "Medic's diagnose and surgeon steps require a real model: set "
-            "LLM_BASE_URL, LLM_API_KEY and LLM_MODEL in .env. There is no scripted "
-            "fallback by design — a model that diagnoses the agent would be "
-            "grading its own work."
-        )
-    from openai import OpenAI
+    """First provider in the chain that is configured.
 
-    s = llm_settings()
-    client = OpenAI(api_key=s["api_key"], base_url=s["base_url"])
-    try:
-        import neatlogs
+    Failover happens per call in ask_json(), not here: which provider served a
+    given request depends on when it runs, and a run that silently mixes
+    providers mid-heal is exactly the thing the evidence must not hide.
+    """
+    from medic import providers as prov
 
-        if neatlogs_active():
-            client = neatlogs.wrap(client)
-    except Exception:
-        pass
-    return client
+    client, provider = prov.build_client()
+    return client, provider
 
 
 def ensure_traced() -> None:
@@ -70,8 +60,9 @@ def ask_json(
     A truncation is retried with a larger budget before giving up, because one
     heuristic ceiling is wrong for every prompt and every model.
     """
-    client = _client()
-    s = llm_settings()
+    from medic import providers as prov
+
+    client, provider = _client()
     ensure_traced()
     ceiling = max_tokens or int(os.environ.get("MEDIC_LLM_MAX_TOKENS", "8000"))
 
@@ -91,7 +82,7 @@ def ask_json(
             )
             with span_cm as span:
                 resp = client.chat.completions.create(
-                    model=s["model"],
+                    model=provider.model,
                     messages=[
                         {"role": "system", "content": system},
                         {"role": "user", "content": user},
@@ -109,13 +100,18 @@ def ask_json(
                 if details is not None:
                     reasoning = getattr(details, "reasoning_tokens", 0) or 0
                 if span is not None:
+                    # Record WHO served this call. An evidence file that cannot
+                    # say which provider answered is not evidence.
+                    span["provider"] = provider.label()
                     span["prompt_tokens"] = p_tok
                     span["completion_tokens"] = c_tok
                     span["total_tokens"] = p_tok + c_tok
                     span["output"] = content[:2000]
 
             metrics = {
-                "model": s["model"],
+                "provider": provider.name,
+                "provider_label": provider.label(),
+                "model": provider.model,
                 "prompt_tokens": p_tok,
                 "completion_tokens": c_tok,
                 "reasoning_tokens": reasoning,
@@ -126,10 +122,14 @@ def ask_json(
         except Exception as exc:
             last_err = exc
             if _is_daily_limit(exc):
-                # A PER-DAY budget is not a transient condition: retrying in a
-                # loop would just hammer the API for the next 12 minutes.
-                # Say so plainly and stop, so the operator can wait, switch
-                # provider, or raise the tier.
+                nxt = prov.next_provider(provider)
+                if nxt is not None:
+                    # A daily budget is not transient, but a SECOND provider is
+                    # exactly the answer to it. Fail over and keep going.
+                    print(f"[medic] {provider.label()} daily budget exhausted; "
+                          f"failing over to {nxt.label()}")
+                    client, provider = prov.build_client(preferred=nxt.name)
+                    continue
                 raise RuntimeError(_daily_limit_message(exc)) from exc
             if _is_rate_limited(exc):
                 # Groq enforces a per-MINUTE tokens budget. A heal makes many

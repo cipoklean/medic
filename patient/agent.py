@@ -77,6 +77,21 @@ class PatientAgent:
         self.on_step = on_step
 
     # ── the LLM seam ────────────────────────────────────────────────────
+    def _model_name(self) -> str:
+        """Which model are we actually calling?
+
+        Read from the resolved provider rather than from llm_settings(), so a
+        fallback chain cannot leave the agent asking provider A for a model name
+        that belongs to provider B.
+        """
+        from medic.providers import build_client
+
+        try:
+            _, provider = build_client()
+            return provider.model
+        except Exception:
+            return llm_settings()["model"]
+
     def _client(self):
         """An injected client wins; otherwise build a real one.
 
@@ -119,7 +134,7 @@ class PatientAgent:
             {"role": "user", "content": question},
         ]
         tools = tool_definitions(self.descriptions)
-        model = llm_settings()["model"]
+        model = self._model_name()
 
         with recorder.span("WORKFLOW", "patient_run", question):
             while True:

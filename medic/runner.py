@@ -20,7 +20,6 @@ from __future__ import annotations
 from typing import Callable, Literal
 
 from patient.agent import PatientAgent, RunResult, Step
-from patient.config import llm_configured, llm_settings
 from patient.scripted import ScriptedLLM
 from patient.tracing import Recorder
 
@@ -32,16 +31,13 @@ DEFAULT_MODE: LLMMode = "scripted"
 def build_llm(config: dict, mode: LLMMode = DEFAULT_MODE):
     """Real client when asked and available, deterministic one otherwise."""
     if mode == "real":
-        if not llm_configured():
-            raise RuntimeError(
-                "--llm real needs LLM_BASE_URL, LLM_API_KEY and LLM_MODEL in .env "
-                "(see .env.example). Bedrock: point LLM_BASE_URL at "
-                "https://bedrock-runtime.<region>.amazonaws.com/openai/v1"
-            )
-        from openai import OpenAI
+        # Same provider chain Medic itself uses, so the patient and the
+        # diagnosis can never come from two different providers by accident.
+        from medic.providers import build_client
 
-        s = llm_settings()
-        return OpenAI(api_key=s["api_key"], base_url=s["base_url"])
+        client, provider = build_client()
+        print(f"[medic] patient llm: {provider.label()}")
+        return client
     return ScriptedLLM(config=config)
 
 
