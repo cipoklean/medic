@@ -50,17 +50,33 @@ def _header(console: Console, bug: str, mode: str) -> None:
     )
 
 
-def _fail_panel(console: Console, verdict: dict, metrics: dict, trace_id: str) -> None:
+def _run_panel(console: Console, verdict: dict, metrics: dict, trace_id: str) -> None:
+    """Before-run panel. It must reflect the ACTUAL verdict.
+
+    This printed a red "check FAILED" with the reason "answered in 5 steps
+    (limit 8)" — a passing reason under a failing heading — because the panel
+    was hardcoded to FAIL. A panel that cries wolf on every green run destroys
+    the one signal the screen exists to deliver.
+    """
+    passed = verdict.get("passed")
     body = Text()
-    body.append("✗ check FAILED\n", style="bold red")
-    body.append(f"[{verdict.get('failure_type')}] ", style="red")
-    body.append(verdict.get("reason", ""), style="white")
-    body.append("\n")
-    for d in verdict.get("details") or []:
-        body.append(f"  - {d}\n", style="red")
+    if passed:
+        body.append("✓ check PASSED\n", style="bold green")
+        body.append(f"[{verdict.get('failure_type') or 'ok'}] ", style="green")
+        body.append(verdict.get("reason", ""), style="white")
+        body.append("\n")
+        border, title = "green", "[bold green]baseline run (already healthy)[/bold green]"
+    else:
+        body.append("✗ check FAILED\n", style="bold red")
+        body.append(f"[{verdict.get('failure_type') or 'unknown'}] ", style="red")
+        body.append(verdict.get("reason", ""), style="white")
+        body.append("\n")
+        for d in verdict.get("details") or []:
+            body.append(f"  - {d}\n", style="red")
+        border, title = "red", "[bold red]failing run[/bold red]"
     body.append(f"\nmeasured: {_m(metrics)}\n", style="dim")
     body.append(f"local trace: runs/{trace_id}.json", style="dim cyan")
-    console.print(Panel(body, border_style="red", title="[bold red]failing run[/bold red]"))
+    console.print(Panel(body, border_style=border, title=title))
 
 
 def _diagnosis_panel(console: Console, att: dict, source_note: str = "") -> None:
@@ -147,7 +163,7 @@ def run_heal_ui(
 
     def on_event(event: str, payload: dict) -> None:
         if event == "before_run":
-            _fail_panel(console, payload["verdict"], payload["metrics"], payload["trace_id"])
+            _run_panel(console, payload["verdict"], payload["metrics"], payload["trace_id"])
         elif event == "already_green":
             console.print(
                 Panel(

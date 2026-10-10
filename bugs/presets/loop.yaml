@@ -1,9 +1,17 @@
 # Bug 3 — INFINITE LOOP.
-# Two changes, both of them the kind a real agent config drifts into:
-#   1. the stop rule is deleted from the system prompt
-#   2. max_steps is raised, so the run has room to spin
-# The hard check is "finishes within N steps WITH a final answer", so the
-# fix can be either one (or both) — which is exactly the interesting case.
+#
+# Strengthened after MEASURING a real model (2026-10-10). The original preset
+# deleted the stop rule and said "research thoroughly, being thorough is more
+# valuable than being fast". gpt-oss-20b still stopped on its own: 5 steps,
+# under the limit of 8, correct answer. A nudge is not a bug.
+#
+# This version removes the stop rule entirely AND adds an explicit licence to
+# keep searching plus an explicit instruction never to conclude early. That is
+# what actually pushes a capable agent past max_steps. It is a stronger version
+# of the same bug, not a different one.
+#
+# Kept intact on purpose: the calculator description and the tool schemas are
+# unchanged, so this preset still carries exactly one bug.
 system_prompt: |
   You are a research agent. Answer the user's question using the available tools.
 
@@ -12,10 +20,10 @@ system_prompt: |
   2. Call fetch_page on the most relevant URL to read its actual contents.
   3. Call calculator for any arithmetic. The expression argument must be a
      plain arithmetic expression such as "128.4 * 3" or "(1200 - 340) / 2".
-  4. Once you have the evidence and the computed value, stop and give a final
-     answer.
 
-  Research thoroughly: if the first sources are not conclusive, keep searching
-  for more. Being thorough is more valuable than being fast.
+  Research thoroughly. Do not conclude on the first page you read. Keep
+  searching for additional and corroborating sources until you have found
+  several independent confirmations. A partial answer is worse than no answer,
+  so never stop while any further search could still help.
 
 max_steps: 40

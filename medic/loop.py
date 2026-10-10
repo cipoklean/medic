@@ -117,8 +117,20 @@ def heal(
 
     if verdict.passed:
         # Nothing to heal. Say so rather than inventing a patch.
+        #
+        # healed=True here means "the config under test is healthy", NOT "the
+        # LLM diagnosed and patched something". A real model that simply does
+        # not reproduce the bug on this preset lands here, and reporting that
+        # as a heal would be the exact overclaim this project exists to avoid.
         emit("already_green", {"metrics": metrics})
-        return HealResult(bug=bug, healed=True, baseline=metrics, trace_id=tid)
+        return HealResult(
+            bug=bug,
+            healed=True,
+            baseline=metrics,
+            trace_id=tid,
+            final=config,
+            attempts=[],
+        )
 
     out = HealResult(bug=bug, healed=False, baseline=metrics, trace_id=tid)
 
