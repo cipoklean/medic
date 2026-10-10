@@ -64,6 +64,22 @@ def _load_search(query: str) -> dict | None:
     q_tokens = [t for t in re.split(r"[^a-z0-9]+", query.lower()) if len(t) > 2]
     if not q_tokens:
         return None
+
+    # Words that appear in nearly every fixture and therefore carry no signal.
+    # Counting them let a query about widgets match a fixture about gadgets on
+    # "price" and "order" alone — a confident, wrong result, which is worse than
+    # "no results" because the agent then trusts it.
+    _STOP = {
+        "the", "and", "for", "with", "use", "calculator", "give", "final",
+        "number", "what", "how", "much", "does", "cost", "price", "order",
+        "total", "after", "before", "list", "unit", "each", "per", "from",
+        "this", "that", "are", "was", "were", "you", "your", "please", "many",
+        "quantity", "amount", "value", "sum", "get", "find", "calculate",
+    }
+    distinctive = [t for t in q_tokens if t not in _STOP]
+    if not distinctive:
+        distinctive = q_tokens  # nothing but stopwords: fall back to all
+
     for path in sorted(SEARCH_DIR.glob("*.json")):
         try:
             data = json.loads(path.read_text())
@@ -74,9 +90,15 @@ def _load_search(query: str) -> dict | None:
             f"{r.get('title','')} {r.get('snippet','')}" for r in data.get("results", [])
         ).lower()
         hay_tokens = set(re.split(r"[^a-z0-9]+", haystack.lower()))
-        score = sum(1 for t in q_tokens if t in hay_tokens)
-        # Prefer the candidate sharing the most query terms; ties break on the
-        # fixture name so the result never depends on directory ordering.
+        # Score on DISTINCTIVE tokens only, and require at least one of them to
+        # land. Without the floor, a fixture sharing a single generic word wins
+        # against one that matches the actual subject.
+        hits = [t for t in distinctive if t in hay_tokens]
+        if not hits:
+            continue
+        score = len(hits)
+        # Prefer the candidate sharing the most distinctive terms; ties break on
+        # the fixture name so the result never depends on directory ordering.
         better = score > best_score
         tie = score == best_score and score > 0 and best is not None and path.stem < best[0]
         if better or tie:
