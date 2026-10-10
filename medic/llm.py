@@ -22,6 +22,16 @@ class MedicLLMUnavailable(RuntimeError):
     """Raised when no provider is configured at all (see providers.NoProviderConfigured)."""
 
 
+class ModelAnsweredNothing(RuntimeError):
+    """A 200 response that carries no choices.
+
+    Deliberately NOT treated as a code bug. Some providers return a valid
+    response object with an empty choices list; the honest description is that
+    the model answered nothing, which is retryable and is also a real finding
+    about that provider.
+    """
+
+
 def _client():
     """First provider in the chain that is configured.
 
@@ -85,6 +95,7 @@ def ask_json(
     # twice is pointless.
     last_err: Exception | None = None
     budget_attempts = 0
+    nothing_attempts = 0
     for attempt in range(rate_limit_retries + 1):
         limit = ceiling * (2 ** budget_attempts)
         try:
@@ -112,7 +123,20 @@ def ask_json(
                     response_format={"type": "json_object"},
                     max_tokens=limit,
                 )
-                content = resp.choices[0].message.content or ""
+                # A provider can return a 200 with NO choices at all - laguna
+                # did, and it surfaced as 'TypeError: NoneType object is not
+                # subscriptable' from the line below, which read as a code bug
+                # rather than an empty response. Name it for what it is: the
+                # run produced no answer, so the honest verdict is that the
+                # model answered nothing, not that Medic failed.
+                choices = getattr(resp, "choices", None) or []
+                if not choices:
+                    raise ModelAnsweredNothing(
+                        f"{provider.label()} returned a response with no choices "
+                        f"(finish_reason="
+                        f"{getattr(resp, 'finish_reason', None)})"
+                    )
+                content = choices[0].message.content or ""
                 usage = getattr(resp, "usage", None)
                 p_tok = getattr(usage, "prompt_tokens", 0) or 0
                 c_tok = getattr(usage, "completion_tokens", 0) or 0
@@ -142,6 +166,28 @@ def ask_json(
             return parse_json(content), metrics
         except Exception as exc:
             last_err = exc
+            if isinstance(exc, ModelAnsweredNothing):
+                # Transient: the same request often succeeds on a second call.
+                # Uses its OWN counter, not budget_attempts, because that one
+                # doubles max_tokens each time it increments and an empty
+                # response says nothing about the token budget.
+                nothing_attempts += 1
+                if nothing_attempts <= 2:
+                    time.sleep(1.0 * nothing_attempts)
+                    continue
+                nxt = prov.next_provider(provider)
+                if nxt is not None:
+                    print(f"[medic] {provider.label()} answered nothing twice; "
+                          f"failing over to {nxt.label()}")
+                    provider = nxt
+                    client, _ = prov.build_client(preferred=nxt.name, role="medic")
+                    nothing_attempts = 0
+                    continue
+                raise RuntimeError(
+                    f"{provider.label()} returned no choices twice in a row. "
+                    f"The provider is reachable but answered nothing; this is a "
+                    f"provider fault, not a Medic fault."
+                ) from exc
             if _is_model_unsupported(exc):
                 # A reachable provider whose current model rejects the request
                 # (NaraRouter's jev and exo-stealh both do on a tools array).

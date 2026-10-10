@@ -168,7 +168,33 @@ def check_parse_error(task: dict, result) -> Verdict:
 def check_loop(task: dict, result) -> Verdict:
     """Finishes within max_steps_allowed WITH a final answer."""
     limit = int(task["max_steps_allowed"])
-    metrics = {"steps": len(result.steps), "max_steps_allowed": limit}
+    metrics = {
+        "steps": len(result.steps),
+        "max_steps_allowed": limit,
+        "total_tokens": result.prompt_tokens + result.completion_tokens,
+        "stopped_because": result.stopped_because,
+    }
+
+    # Hitting the TOKEN ceiling is the same failure as blowing the step limit:
+    # the agent is still searching and has not finished. It must be reported as
+    # the loop it is, with its own reason, because "used N steps" would be a
+    # misreading when the guard that fired was the cost one.
+    if result.stopped_because == "token_ceiling":
+        used = result.prompt_tokens + result.completion_tokens
+        return Verdict(
+            passed=False,
+            reason=(
+                f"burned {used:,} tokens across {len(result.steps)} steps and "
+                f"still had not finished - stopped by the token ceiling, not by "
+                f"finishing"
+            ),
+            details=[
+                f"step limit {limit}, token ceiling hit at {used:,}",
+                "an agent that has not answered after this much spend is not going to",
+            ],
+            failure_type="loop",
+            metrics=metrics,
+        )
 
     if not result.answer.strip():
         # An empty response is a DIFFERENT fault from a loop, and calling it

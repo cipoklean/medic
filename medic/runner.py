@@ -35,7 +35,7 @@ def build_llm(config: dict, mode: LLMMode = DEFAULT_MODE):
         # diagnosis can never come from two different providers by accident.
         from medic.providers import build_client
 
-        client, provider = build_client()
+        client, provider = build_client(role="patient")
         print(f"[medic] patient llm: {provider.label()}")
         return client
     return ScriptedLLM(config=config)
@@ -47,6 +47,7 @@ def run_once(
     config: dict,
     on_step: Callable[[Step], None] | None = None,
     mode: LLMMode = DEFAULT_MODE,
+    max_steps: int | None = None,
 ) -> RunResult:
     """Run the patient once.
 
@@ -58,7 +59,8 @@ def run_once(
     client = build_llm(config, mode)
     if mode == "real":
         client = _throttled(client)
-    agent = PatientAgent(config, llm=client, on_step=on_step)
+    agent = PatientAgent(config, llm=client, on_step=on_step,
+                         max_steps_override=max_steps)
     return agent.run(question, recorder)
 
 

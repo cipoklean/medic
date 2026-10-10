@@ -66,9 +66,20 @@ class RunResult:
 
 
 class PatientAgent:
-    def __init__(self, config: dict, llm=None, on_step: Callable[[Step], None] | None = None):
+    def __init__(self, config: dict, llm=None, on_step: Callable[[Step], None] | None = None,
+                 max_steps_override: int | None = None,
+                 token_ceiling: int | None = None):
         self.config = config
-        self.max_steps = int(config.get("max_steps", 8))
+        self.max_steps = max_steps_override or int(config.get("max_steps", 8))
+        # A per-run cost guard, SEPARATE from max_steps. A step ceiling alone let
+        # a laguna run burn 180,000 tokens inside 40 steps - expensive, and a
+        # probe that runs ten minutes before it reports anything at all.
+        # MEDIC_TOKEN_CEILING (default 30000) bounds what a probe can cost.
+        # Hitting it still proves the runaway: an agent that has not finished
+        # after 30k tokens is not going to.
+        self.token_ceiling = token_ceiling or int(
+            os.environ.get("MEDIC_TOKEN_CEILING", "30000")
+        )
         self.retry_on_parse_error = bool(config.get("retry_on_parse_error", False))
         self.descriptions = {
             name: (spec or {}).get("description", "")
@@ -167,11 +178,30 @@ class PatientAgent:
         empty_retries = 0
         with recorder.span("WORKFLOW", "patient_run", question):
             while True:
+                # Two independent ceilings. A step ceiling alone lets a cheap
+                # model burn 180,000 tokens inside 40 steps, which is both a
+                # money problem and a way for a probe to run for ten minutes
+                # before it tells you anything. MEDIC_TOKEN_CEILING makes the
+                # cost of a probe bounded and predictable, and stopping there
+                # still proves the runaway: an agent that has not finished
+                # after 30,000 tokens is not going to.
+                used = result.prompt_tokens + result.completion_tokens
                 if len(result.steps) >= self.max_steps:
                     result.stopped_because = "max_steps"
                     result.answer = (
                         "I could not complete this within my step budget."
                     )
+                    break
+                if used >= self.token_ceiling:
+                    result.stopped_because = "token_ceiling"
+                    result.answer = (
+                        "I could not complete this within my token budget."
+                    )
+                    recorder.span("GUARD", "token_ceiling_stop", {
+                        "tokens_used": used,
+                        "ceiling": self.token_ceiling,
+                        "steps": len(result.steps),
+                    })
                     break
 
                 with recorder.span("LLM", f"llm_call_{len(result.steps) + 1}",
