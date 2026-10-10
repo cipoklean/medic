@@ -1,10 +1,10 @@
 {
-  "query": "helio panel price",
   "results": [
     {
-      "title": "Helio Solar panels",
+      "title": "Helio Solar \u2014 H200 panel",
       "url": "https://example.com/helio-panels",
-      "snippet": "Helio H200 panel lists at $1,250.00 each."
+      "snippet": "Specification and pricing sheet for the Helio H200 solar panel, including per-unit list price and multi-panel quotes."
     }
-  ]
+  ],
+  "query": "helio panel price"
 }

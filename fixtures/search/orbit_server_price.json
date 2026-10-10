@@ -1,10 +1,10 @@
 {
-  "query": "orbit server price",
   "results": [
     {
-      "title": "Orbit Servers pricing",
+      "title": "Orbit Compute \u2014 pricing",
       "url": "https://example.com/orbit-pricing",
-      "snippet": "Orbit Compute Basic is $450.00 per month."
+      "snippet": "Monthly subscription pricing for Orbit Compute server tiers, from the entry-level Basic plan upward."
     }
-  ]
+  ],
+  "query": "orbit server price"
 }

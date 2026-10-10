@@ -1,0 +1,136 @@
+{
+  "question": "Does the parse_error bug reproduce on nova-micro, regardless of model?",
+  "model": "nova-micro",
+  "bug_class": "CONFIG DEFECT, not a tuned prompt: retry_on_parse_error=false plus a tool that returns malformed JSON. The config half already forbids recovery, so the fix is one boolean.",
+  "tasks": {
+    "parse-error-solar": {
+      "split": "train",
+      "runs": [
+        {
+          "run": 1,
+          "reproduced": false,
+          "failure_type": null,
+          "reason": "survived the malformed payload and still answered 5,000.00",
+          "saw_parse_error": false,
+          "steps": 2,
+          "total_tokens": 3184,
+          "answer": "The total cost for four Helio H200 solar panels, using the list price of $1,250.00 per panel, is $5,000.00.\n\nCitation:\nhttps://example.com/helio-panels",
+          "run_id": "95fb8f7fa0134350",
+          "neatlogs_trace_id": null
+        },
+        {
+          "run": 2,
+          "reproduced": false,
+          "failure_type": null,
+          "reason": "survived the malformed payload and still answered 5,000.00",
+          "saw_parse_error": false,
+          "steps": 2,
+          "total_tokens": 3184,
+          "answer": "The total cost for four Helio H200 solar panels, using the list price of $1,250.00 per panel, is $5,000.00.\n\nCitation:\nhttps://example.com/helio-panels",
+          "run_id": "4bb27a4f84544c47",
+          "neatlogs_trace_id": null
+        },
+        {
+          "run": 3,
+          "reproduced": false,
+          "failure_type": null,
+          "reason": "survived the malformed payload and still answered 5,000.00",
+          "saw_parse_error": false,
+          "steps": 2,
+          "total_tokens": 3184,
+          "answer": "The total cost for four Helio H200 solar panels, using the list price of $1,250.00 per panel, is $5,000.00.\n\nCitation:\nhttps://example.com/helio-panels",
+          "run_id": "11fb5377d69f4e87",
+          "neatlogs_trace_id": null
+        }
+      ],
+      "reproductions": 0
+    },
+    "parse-error-gadgets": {
+      "split": "heldout",
+      "runs": [
+        {
+          "run": 1,
+          "reproduced": false,
+          "failure_type": null,
+          "reason": "survived the malformed payload and still answered 89.99",
+          "saw_parse_error": false,
+          "steps": 1,
+          "total_tokens": 1955,
+          "answer": "The cost of one case, when the blue gadget and the case are sold together for $169.98 and the blue gadget itself lists at $79.99, is **$89.99**.",
+          "run_id": "c3414ed857db4e5b",
+          "neatlogs_trace_id": null
+        },
+        {
+          "run": 2,
+          "reproduced": false,
+          "failure_type": null,
+          "reason": "survived the malformed payload and still answered 89.99",
+          "saw_parse_error": false,
+          "steps": 1,
+          "total_tokens": 1955,
+          "answer": "The cost of one case, when the blue gadget and the case are sold together for $169.98 and the blue gadget itself lists at $79.99, is **$89.99**.",
+          "run_id": "6137a04b687746e0",
+          "neatlogs_trace_id": null
+        },
+        {
+          "run": 3,
+          "reproduced": false,
+          "failure_type": null,
+          "reason": "survived the malformed payload and still answered 89.99",
+          "saw_parse_error": false,
+          "steps": 1,
+          "total_tokens": 1955,
+          "answer": "The cost of one case, when the blue gadget and the case are sold together for $169.98 and the blue gadget itself lists at $79.99, is **$89.99**.",
+          "run_id": "ddba4c396ef9459c",
+          "neatlogs_trace_id": null
+        }
+      ],
+      "reproductions": 0
+    },
+    "parse-error-widgets": {
+      "split": "heldout",
+      "runs": [
+        {
+          "run": 1,
+          "reproduced": false,
+          "failure_type": null,
+          "reason": "survived the malformed payload and still answered 12,840.00",
+          "saw_parse_error": false,
+          "steps": 1,
+          "total_tokens": 1939,
+          "answer": "To convert the price of a unit from dollars to cents, I multiplied the dollar amount by 100. The result is 12,840 cents. Therefore, one unit costs 12,840 cents.",
+          "run_id": "b581df55ba1546f3",
+          "neatlogs_trace_id": null
+        },
+        {
+          "run": 2,
+          "reproduced": false,
+          "failure_type": null,
+          "reason": "survived the malformed payload and still answered 12,840.00",
+          "saw_parse_error": false,
+          "steps": 1,
+          "total_tokens": 1939,
+          "answer": "To convert the price of a unit from dollars to cents, I multiplied the dollar amount by 100. The result is 12,840 cents. Therefore, one unit costs 12,840 cents.",
+          "run_id": "6e4a0e275ab14ec6",
+          "neatlogs_trace_id": null
+        },
+        {
+          "run": 3,
+          "reproduced": false,
+          "failure_type": null,
+          "reason": "survived the malformed payload and still answered 12,840.00",
+          "saw_parse_error": false,
+          "steps": 1,
+          "total_tokens": 1939,
+          "answer": "To convert the price of a unit from dollars to cents, I multiplied the dollar amount by 100. The result is 12,840 cents. Therefore, one unit costs 12,840 cents.",
+          "run_id": "8484c5ba49c44ea0",
+          "neatlogs_trace_id": null
+        }
+      ],
+      "reproductions": 0
+    }
+  },
+  "total_reproductions": 0,
+  "reproduces": false,
+  "disclosure": "A run counts as reproduced when the hard check fails. saw_parse_error records whether the malformed payload actually surfaced in that run, which separates 'the bug fired' from 'the run failed for another reason'."
+}

@@ -47,10 +47,17 @@ def load_tasks() -> list[dict]:
 
 
 def fixture_numbers(fixture: str) -> list[Decimal]:
-    """Every number appearing in a fixture's titles, snippets and body."""
-    path = ROOT / "fixtures" / "search" / f"{fixture}.json"
+    """Every number appearing in the named fixture.
+
+    `expect.from` now points at a PAGE fixture, which is the only place answer
+    figures live. Search snippets deliberately carry none — see
+    test_no_snippet_leaks_an_answer below.
+    """
+    path = ROOT / "fixtures" / "pages" / fixture
     if not path.exists():
-        path = ROOT / "fixtures" / "pages" / f"{fixture}.html"
+        path = ROOT / "fixtures" / "search" / fixture
+    if not path.exists():
+        path = ROOT / "fixtures" / "search" / f"{fixture}.json"
     if not path.exists():
         raise AssertionError(f"fixture not found: {fixture}")
     text = path.read_text()
@@ -70,6 +77,44 @@ def evaluate(expr: str, values: dict[str, Decimal]) -> Decimal:
     allowed = {k: v for k, v in values.items()}
     safe_globals = {"__builtins__": {}, "Decimal": Decimal, **allowed}
     return eval(expr, safe_globals)  # noqa: S307 — inputs are task files, not user data
+
+
+def test_no_snippet_leaks_an_answer() -> int:
+    """No search snippet may contain any task's expected number.
+
+    A snippet that carries the answer makes fetch_page optional, and then a bug
+    that lives in fetch_page can never fire — which is exactly what happened:
+    parse_error reproduced 0/9 on nova-micro with parse_err_seen=False in every
+    run, because the model read the price straight out of the snippet and never
+    fetched the page. The absence looked like a model difference and was a
+    harness shortcut.
+
+    Snippets may still carry NON-answer figures (quantities, dates, tiers), so
+    the check is against each task's expected_answer specifically.
+    """
+    tasks = load_tasks()
+    expected: dict[str, Decimal] = {}
+    for t in tasks:
+        expected[t["id"]] = Decimal(str(t["expected_answer"]))
+
+    leaks: list[str] = []
+    for path in sorted((ROOT / "fixtures" / "search").glob("*.json")):
+        data = json.loads(path.read_text())
+        for r in data.get("results", []):
+            snippet_nums = set(_numbers_in(r.get("snippet", "")))
+            for tid, val in expected.items():
+                if val in snippet_nums:
+                    leaks.append(f"{path.name}: snippet contains {val} (answer to {tid})")
+
+    if leaks:
+        print("\nSNIPPET LEAKS AN ANSWER:")
+        for l in leaks:
+            print(f"  {l}")
+        print("  A snippet carrying the answer makes fetch_page optional, and a")
+        print("  bug in fetch_page can then never fire.")
+        return 1
+    print(f"  no snippet leaks any of the {len(expected)} task answers")
+    return 0
 
 
 def main() -> int:
@@ -113,6 +158,8 @@ def main() -> int:
 
     print()
     print(f"re-derived: {checked}/{len(tasks)}   unverified: {len(unverified)}")
+    if test_no_snippet_leaks_an_answer() != 0:
+        failed.append(("(snippets)", "a search snippet contains a task answer"))
     if failed:
         print("\nMISMATCHES — the task expectation disagrees with its own fixtures:")
         for tid, why in failed:

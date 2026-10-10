@@ -1,10 +1,10 @@
 {
-  "query": "acme widget order",
   "results": [
     {
       "title": "ACME order confirmation",
       "url": "https://example.com/acme-order",
-      "snippet": "ACME placed an order for 250 widgets on 12 May at the standard unit price of $128.40. Bulk orders of 250+ receive a 12% volume discount."
+      "snippet": "ACME Corp placed a bulk order for standard widgets on 12 May. Volume terms and unit pricing are detailed on the order page."
     }
-  ]
+  ],
+  "query": "acme widget order"
 }
