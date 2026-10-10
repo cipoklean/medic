@@ -408,10 +408,29 @@ than asserted.
 
 ### [cfo.ai](https://cfo.ai) — business model
 
-Input for the plan in [`docs/business.md`](docs/business.md): target user,
-pricing shape, cost-per-heal derived from our measured tokens, and a runway
-sketch. The raw measurements come from `evidence/`, so the model is grounded in
-runs rather than in guesses.
+**Built plan: https://cfo.ai/s/teLQ2nwFftStndEU**
+
+Input sheet: [`docs/cfo-ai-input.md`](docs/cfo-ai-input.md). Every figure is
+either measured from a run in `evidence/` or explicitly labelled an assumption.
+
+Plan outputs, main scenario (30 teams):
+
+| | |
+|---|---|
+| MRR, month 12 (Sep 2027) | **$1,859** |
+| ARR run rate, Dec 2027 | **$29,690** |
+| Total cash required | **$225** |
+| First cash-positive month | **Jan 2027** |
+| Gross margin at month 12 | **95.5%** |
+
+**95.5% is the number to quote.** It is cfo.ai's figure and it includes Stripe
+fees and hosting. Our own **98.6%** is *inference-only* — what the margin would be
+if tokens were the only cost, measured from a heal that ran end to end at
+**$0.009426**. Both are correct; the gap between them is fees and hosting.
+
+The medic model is priced on **Sonnet, measured** — the only model that has
+actually served a Medic call. Cheaper medic models are rate-card arithmetic, not
+results, and the plan says so.
 
 ---
 

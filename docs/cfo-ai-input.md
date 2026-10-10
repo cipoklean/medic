@@ -87,12 +87,17 @@ Inference is **$0.009426/heal measured**. Allocations below are assumptions.
 |---|---|---|---|
 | Free CLI | $0 | $0 (user's own keys) | n/a — acquisition cost |
 | Hosted, single heal | $19 | $0.0094 inference + $0.50 hosting | **~97%** |
-| Hosted, $49/mo for 20 | $49 | $0.188 inference (20 × $0.0094) + $0.50 hosting | **~98.6%** |
+| Hosted, $49/mo for 20 | $49 | $0.188 inference (20 × $0.0094) + $0.50 hosting | **~98.6%** (inference-only; cfo.ai reports 95.5% with fees) |
 | Team, $99/seat/mo | $99 | $0.0094/heal × assumed 20 heals + $0.50 | **~98%** |
 
-**This is the headline number: gross margin ≈ 98.6%, measured.** Inference is
-**under 1% of revenue** at every tier, from a heal that was actually run end to
-end — not modelled.
+**Inference-only gross margin ≈ 98.6%, measured.** Inference is **under 1% of
+revenue** at every tier, from a heal that was actually run end to end — not
+modelled.
+
+**Note for the built plan:** cfo.ai reports **95.5%** gross margin at month 12,
+because it adds Stripe fees and hosting on top of inference. **95.5% is the number
+to quote externally**; 98.6% is what the margin would be if tokens were the only
+cost. Plan: https://cfo.ai/s/teLQ2nwFftStndEU
 
 **The cost structure is the business case:** the product is verification and
 history, not tokens. A competitor can copy the suggestion step; copying the

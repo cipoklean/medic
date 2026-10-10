@@ -9,9 +9,9 @@ Sponsor: **cfo.ai**. The input sheet is
 
 <!-- Paste the cfo.ai share/export link here once the plan is built. -->
 
-**Plan URL:** _pending_
+**Plan URL:** https://cfo.ai/s/teLQ2nwFftStndEU
 
-**Built:** _pending_
+**Built:** 2026-10-10 · main scenario, 30 teams
 
 ---
 
@@ -24,7 +24,7 @@ can pull the same images.
 |---|---|---|
 | Pricing tiers | `docs/assets/cfo-pricing.png` | the three tiers and their rationale |
 | Unit economics | `docs/assets/cfo-unit-cost.png` | $0.009426/heal, margin under 1% inference |
-| Margin by tier | `docs/assets/cfo-margin.png` | ~97–98.6% gross margin |
+| Margin by tier | `docs/assets/cfo-margin.png` | 95.5% at month 12 (incl. fees + hosting) |
 | 12-month revenue | `docs/assets/cfo-revenue.png` | conservative / base / optimistic |
 | Runway | `docs/assets/cfo-runway.png` | burn by phase, breakeven at ~3 teams |
 
@@ -32,14 +32,22 @@ can pull the same images.
 
 ## The numbers to put on screen in the video
 
-Lead with the margin — it is the only one that is both measured and flattering.
+From the built cfo.ai plan, main scenario (30 teams):
 
-1. **98.6% gross margin** — MEASURED, from a heal that actually ran end to end
-2. **$0.009426 per heal** — measured, not estimated; inference is under 1% of
-   revenue at every tier
-3. **80% of that cost is the medic's reasoning** — the priced product is the
-   diagnosis, not the patient runs
-4. **~3 paying teams to breakeven** — at $49/mo against $150/mo burn
+1. **95.5% gross margin** at month 12 — the plan's own figure, and the one to
+   quote. It includes Stripe fees and hosting.
+2. **MRR month 12 (Sep 2027): $1,859** · **ARR run rate Dec 2027: $29,690**
+3. **$0.009426 per heal** — measured, not estimated
+4. **$225 total cash required** · **first cash-positive month: Jan 2027**
+
+**On the two margin numbers — do not mix them up:**
+
+* **95.5%** is the cfo.ai plan's gross margin. It is the real one, because it
+  includes Stripe fees and hosting. Quote this.
+* **98.6%** is our *inference-only* margin, from the measured heal. It is what the
+  margin would be if tokens were the only cost. It is not the plan's number.
+
+The gap between them is Stripe and hosting, and that gap is the honest part.
 
 **Do not lead with the 107× medic-model spread.** Only Sonnet has ever served a
 Medic call; haiku and nova-micro are rate-card arithmetic, not results. It is a
@@ -66,12 +74,13 @@ The measured core is deliberately small and hard. The assumptions are the model.
 
 ## Status
 
-- [ ] Input sheet pasted into cfo.ai
-- [ ] Export link added above
+- [x] Input sheet pasted into cfo.ai
+- [x] Export link added above
+- [x] Plan numbers recorded (main scenario, 30 teams)
 - [ ] Screenshots captured to `docs/assets/`
-- [ ] Numbers reconciled against `docs/business.md` §4
+- [ ] Numbers reconciled against `docs/business.md` §4–5
 
-> **Known discrepancy to fix while building the plan:** `docs/business.md` §5
-> still quotes inference at **$0.11–0.17/heal**, from the earlier Groq-based
-> measurement. The current measured figure is **$0.009426** — 12–18× lower. Use
-> the measured number; §5 needs updating to match.
+> **Two margin figures, deliberately kept separate.** cfo.ai reports **95.5%**
+> gross margin at month 12, which includes Stripe fees and hosting — that is the
+> number to quote anywhere externally. Our own **98.6%** is inference-only. Both
+> are correct; they answer different questions.

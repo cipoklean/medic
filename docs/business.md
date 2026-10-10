@@ -137,11 +137,16 @@ Assumptions, stated so they can be challenged:
   Groq-based measurement. The live heal on Bedrock measured $0.009426 — 12–18×
   lower. See §4.)*
 * Hosting and storage of traces and reports: assumed $0.50/team/month.
-* Gross margin ≈ **98.6%** at $49/mo.
+* Inference-only gross margin ≈ **98.6%** at $49/mo; **95.5%** once Stripe fees and hosting are included (cfo.ai).
 
 At the measured cost, inference is **under 1% of revenue** at every tier, giving
-**~98.6% gross margin** — the single most important number in this document. The
-product is verification and history, not tokens.
+an **inference-only margin of ~98.6%**.
+
+**The number to quote is 95.5%** — cfo.ai's gross margin at month 12, which adds
+Stripe fees and hosting on top of inference. Plan:
+https://cfo.ai/s/teLQ2nwFftStndEU
+
+The product is verification and history, not tokens.
 
 **Caveat on the medic-model dial below:** only `claude-sonnet-4.6` has ever served
 a Medic call. The cheaper rows are rate-card arithmetic, not results, and nobody

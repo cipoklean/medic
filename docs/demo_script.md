@@ -208,23 +208,24 @@ Sponsor word: **Entire.** · checkpoint: `01M4JB59S0C8NN6N28S7F24EYW`
 
 ### 2:25–2:40 — cfo.ai (SPONSOR 3)
 
-Open `docs/business.md`.
+Open the plan: **https://cfo.ai/s/teLQ2nwFftStndEU**
 
-**"The model is in cfo.ai, built from these runs — not from assumptions."**
+**"The business model is in cfo.ai, built from these runs — not from
+assumptions."**
 
-Point at the table:
+Point at the numbers:
 
-* **$0.0091 per heal**, measured, no estimates
-* **87% is the medic's reasoning** — that's the priced product
-* **107× spread** between nova-micro and Sonnet as the medic → three tiers fall
-  out of it: auto-heal cheap, escalate on low confidence
-* **30× a healthy run** ($0.0091 vs $0.0003) — compare against a human noticing
+* **MRR month 12: $1,859** · **ARR run rate Dec 2027: $29,690**
+* **95.5% gross margin** — that's cfo.ai's own figure, and it includes Stripe fees
+  and hosting
+* **$225 total cash required** · **first cash-positive: January 2027**
+* **$0.009426 per heal**, measured
 
-**"And the medic model is a dial, not a fixed cost."**
+**"And the margin — ninety-five and a half percent. That's with payment fees and
+hosting already in it. Our own inference-only number is ninety-eight point six;
+the difference is Stripe and a server. I'd rather show you the smaller number."**
 
 Sponsor word: **cfo.ai.**
-
----
 
 ### 2:40–2:45 — CLOSE
 
@@ -252,6 +253,8 @@ to write ourselves."**
 * "Medic heals everything" — one heal, one bug class, one host.
 * Any number not in this document.
 * Any estimate. The cost table has none.
+* **98.6% as the gross margin.** It is inference-only. The plan's number is
+  **95.5%** and that is the one to say out loud.
 
 ## Assets
 
