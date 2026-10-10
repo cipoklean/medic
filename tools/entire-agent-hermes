@@ -454,7 +454,14 @@ def cmd_are_hooks_installed() -> int:
     return _out({"installed": False})
 
 
+def cmd_latest_session() -> int:
+    """Convenience: print the most recently updated Hermes session id."""
+    print(_latest_session())
+    return 0
+
+
 COMMANDS = {
+    "_latest": cmd_latest_session,
     "info": cmd_info,
     "detect": cmd_detect,
     "get-session-id": cmd_get_session_id,

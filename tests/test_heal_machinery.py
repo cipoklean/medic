@@ -1,15 +1,30 @@
-"""Heal-loop tests, runnable with or without LLM credentials.
+"""Heal MACHINERY tests — NOT proof that Medic heals anything.
 
-Without a key, diagnose/surgeon raise by design, so these tests drive the
-DETERMINISTIC fix path directly — which is what proves the machinery around the
-LLM is sound (trace loading, patch application, allowlist, type checks,
-train+held-out verification, and the no-write-unless-verified rule).
+WHAT THIS DOES AND DOES NOT PROVE
+---------------------------------
+This file never calls `medic.diagnose.diagnose()` or `medic.surgeon.propose()`.
+It takes `failure_type` straight from the DETERMINISTIC hard check and calls
+`surgeon.deterministic_patch()`. So there is no LLM in this path at all.
 
-With a key (MEDIC_TEST_LLM=1) they additionally exercise the real LLM path.
+It DOES prove the machinery around the model is sound:
+  - local trace fallback works when neatlogs is unreachable
+  - a patch survives train + held-out verification for all four bugs
+  - the allowlist refuses a non-medic.yaml field and the type checks refuse
+    a string max_steps, a string retry flag and an empty system_prompt
+  - apply_patch does not mutate its input and round-trips through YAML
+  - medic.yaml returns to the clean baseline after healing
+
+It does NOT prove "Medic healed it". That claim requires a real model naming
+the broken span and proposing the patch, and is only made once
+`--llm real` has produced a real end-to-end heal (see evidence/).
+
+Renamed from test_heal.py after this distinction was pointed out: the old name
+and the old summary line both implied a heal that was never performed.
 """
 from __future__ import annotations
 
 import sys
+from pathlib import Path
 
 from bugs.inject import apply_bug, clean_config, reset_bug
 from medic import surgeon as surg
@@ -64,8 +79,8 @@ def test_trace_local_fallback_always_works() -> list[str]:
     return problems
 
 
-def test_every_bug_heals() -> list[str]:
-    """The headline: heal fixes bugs 1-3 and passes HELD-OUT tasks."""
+def test_deterministic_patch_satisfies_all_checks() -> list[str]:
+    """A hand-written patch passes train + held-out. No LLM involved."""
     problems = []
     for bug in ("wrong_args", "loop", "parse_error", "hallucinated_citation"):
         reset_bug(bug)
@@ -153,13 +168,52 @@ def test_clean_config_is_untouched_by_healing() -> list[str]:
     return problems
 
 
+def test_no_llm_is_used_in_this_path() -> list[str]:
+    """Guard the distinction this file exists to make.
+
+    If someone later routes these tests through the real diagnoser, the output
+    changes meaning and the offline claim becomes false. The check reads only
+    the helper functions ABOVE this one, so its own prose cannot match itself.
+    """
+    import io
+    import re
+    import tokenize
+
+    # Compare CODE only. Docstrings mention these names in prose, and matching
+    # prose is how this check produced false positives on its own explanation.
+    body = source_before_this_guard()
+    code = []
+    for tok in tokenize.generate_tokens(io.StringIO(body).readline):
+        if tok.type in (tokenize.COMMENT, tokenize.STRING):
+            continue
+        code.append(tok.string)
+    code = " ".join(code)
+
+    problems = []
+    for fn in ("diagnose", "propose"):
+        if re.search(r"\b" + fn + r"\s*\(", code):
+            problems.append(f"tests now call {fn}() - the offline claim would be false")
+    if "_heal_with_deterministic_fix" not in body:
+        problems.append("helper renamed; re-check what this file exercises")
+    if "deterministic_patch" not in body:
+        problems.append("no longer exercising surgeon.deterministic_patch")
+    return problems
+
+
+def source_before_this_guard() -> str:
+    """Everything above this function, i.e. the code the claim is about."""
+    text = Path(__file__).read_text()
+    return text[: text.index("def test_no_llm_is_used_in_this_path")]
+
+
 def main() -> int:
     tests = [
         ("local trace fallback always works", test_trace_local_fallback_always_works),
-        ("every bug heals (train + held-out)", test_every_bug_heals),
+        ("a deterministic patch satisfies train + held-out", test_deterministic_patch_satisfies_all_checks),
         ("patch allowlist holds", test_patch_allowlist),
         ("patch is immutable and round-trips", test_patch_does_not_mutate_and_roundtrips),
         ("clean config restored after healing", test_clean_config_is_untouched_by_healing),
+        ("no LLM is used in this test path", test_no_llm_is_used_in_this_path),
     ]
     failures = []
     for name, fn in tests:
@@ -176,7 +230,7 @@ def main() -> int:
     if failures:
         print(f"\n{len(failures)} test(s) failed")
         return 1
-    print("\nALL HEAL TESTS PASS")
+    print("\nALL MACHINERY TESTS PASS (no LLM was used in this path)")
     return 0
 
 

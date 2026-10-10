@@ -87,6 +87,29 @@ materialises the transcript and creates a checkpoint, which then needs an
 
 **Phase status:**
 
+### ⚠️ CORRECTION — what is and is NOT yet proven (2026-10-10 08:35 WAT)
+
+**The offline heal tests do NOT prove "Medic heals anything".** They contain no LLM at
+all: `tests/test_heal_machinery.py` (renamed from `test_heal.py`) takes `failure_type`
+straight from the **deterministic hard check** and calls `surgeon.deterministic_patch()`,
+skipping `diagnose()` and `surgeon.propose()` entirely.
+
+They prove only that the **machinery** around the model is sound: local trace fallback,
+a hand-written patch satisfying train + held-out, the allowlist and type checks,
+`apply_patch` immutability + YAML round-trip, and clean-baseline restoration. A guard test
+(`test_no_llm_is_used_in_this_path`) fails if anyone later routes these tests through the
+real diagnoser, so the distinction cannot silently rot.
+
+**The claim "Medic healed it" requires a real model naming the broken span and proposing
+the patch.** It has NOT been made yet and must not appear in README, evidence/, or the demo
+until `--llm real` produces an end-to-end heal. Blocked only on the LLM key.
+
+**Entire session note:** the build session `20261009_191831_9554f70b` started
+2026-10-09 19:18 UTC, which is BEFORE the window opened (2026-10-10 07:00 UTC / 08:00 WAT).
+All 13 commits are inside the window (07:00:21 → 07:30:31 UTC). Do not let the README imply
+otherwise. Use `scripts/entire_checkpoint.sh [msg]` for future checkpoints; it prints the
+session id, checkpoint id and URL so the provenance is always visible.
+
 **What works NOW (all by actual run, not by reading code):**
 - `python cli.py doctor` → env table, Python 3.13.15, `neatlogs doctor --local` PASS, LLM ping.
 - Patient agent loop runs end-to-end on a scripted client: WORKFLOW → LLM → TOOL → … → final answer,
