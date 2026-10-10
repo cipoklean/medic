@@ -1,0 +1,239 @@
+"""The patient agent — a small tool-calling loop.
+
+Everything it is allowed to change lives in medic.yaml. There is no other
+knob: no prompt constants here, no step cap here, no retry policy here. If a
+bug lives in behaviour, its fix must live in that file or it is not fixable by
+Medic — which is the point.
+"""
+from __future__ import annotations
+
+import json
+import time
+from dataclasses import dataclass, field
+from typing import Any, Callable
+
+import yaml
+
+from .config import ROOT, llm_settings
+from .tools import dispatch, tool_definitions
+
+MEDIC_YAML = ROOT / "medic.yaml"
+
+
+def load_config(path=None) -> dict:
+    with open(path or MEDIC_YAML) as fh:
+        return yaml.safe_load(fh) or {}
+
+
+@dataclass
+class Step:
+    index: int
+    tool_name: str
+    args: dict
+    output: Any = None
+    error: str | None = None
+    duration_ms: float = 0.0
+
+
+@dataclass
+class RunResult:
+    run_id: str
+    question: str
+    answer: str = ""
+    steps: list[Step] = field(default_factory=list)
+    stopped_because: str = "final_answer"
+    prompt_tokens: int = 0
+    completion_tokens: int = 0
+    trace_path: str = ""
+    neatlogs_active: bool = False
+    error: str | None = None
+
+    def to_dict(self) -> dict:
+        return {
+            "run_id": self.run_id,
+            "question": self.question,
+            "answer": self.answer,
+            "steps": [s.__dict__ for s in self.steps],
+            "stopped_because": self.stopped_because,
+            "prompt_tokens": self.prompt_tokens,
+            "completion_tokens": self.completion_tokens,
+            "total_tokens": self.prompt_tokens + self.completion_tokens,
+            "trace_path": self.trace_path,
+            "neatlogs_active": self.neatlogs_active,
+            "error": self.error,
+        }
+
+
+class PatientAgent:
+    def __init__(self, config: dict, llm=None, on_step: Callable[[Step], None] | None = None):
+        self.config = config
+        self.max_steps = int(config.get("max_steps", 8))
+        self.retry_on_parse_error = bool(config.get("retry_on_parse_error", False))
+        self.descriptions = {
+            name: (spec or {}).get("description", "")
+            for name, spec in (config.get("tools") or {}).items()
+        }
+        self._llm = llm
+        self.on_step = on_step
+
+    # ── the LLM seam ────────────────────────────────────────────────────
+    def _client(self):
+        """An injected client wins; otherwise build a real one.
+
+        Bedrock's OpenAI-compatible endpoint is reachable with the same client
+        by pointing base_url at bedrock-runtime.<region>.amazonaws.com/openai/v1.
+        """
+        if self._llm is not None:
+            return self._llm
+        from openai import OpenAI
+
+        s = llm_settings()
+        if not (s["api_key"] and s["base_url"] and s["model"]):
+            raise RuntimeError(
+                "LLM_BASE_URL / LLM_API_KEY / LLM_MODEL must be set in .env "
+                "(see .env.example), or inject a client for an offline run."
+            )
+        return OpenAI(api_key=s["api_key"], base_url=s["base_url"])
+
+    def _wrap(self, client):
+        """neatlogs.wrap if available — makes every LLM call a span for free."""
+        try:
+            import neatlogs
+
+            from .tracing import neatlogs_active
+
+            if neatlogs_active():
+                return neatlogs.wrap(client)
+        except Exception:
+            pass
+        return client
+
+    # ── main loop ───────────────────────────────────────────────────────
+    def run(self, question: str, recorder) -> RunResult:
+        from .tracing import neatlogs_active
+
+        client = self._wrap(self._client())
+        result = RunResult(run_id=recorder.run_id, question=question)
+        messages: list[dict] = [
+            {"role": "system", "content": self.config.get("system_prompt", "")},
+            {"role": "user", "content": question},
+        ]
+        tools = tool_definitions(self.descriptions)
+        model = llm_settings()["model"]
+
+        with recorder.span("WORKFLOW", "patient_run", question):
+            while True:
+                if len(result.steps) >= self.max_steps:
+                    result.stopped_because = "max_steps"
+                    result.answer = (
+                        "I could not complete this within my step budget."
+                    )
+                    break
+
+                with recorder.span("LLM", f"llm_call_{len(result.steps) + 1}",
+                                   {"messages": len(messages)}) as llm_span:
+                    resp = client.chat.completions.create(
+                        model=model,
+                        messages=messages,
+                        tools=tools,
+                        temperature=0,
+                        seed=7,
+                    )
+                    usage = getattr(resp, "usage", None)
+                    p_tok = getattr(usage, "prompt_tokens", 0) or 0
+                    c_tok = getattr(usage, "completion_tokens", 0) or 0
+                    llm_span["prompt_tokens"] = p_tok
+                    llm_span["completion_tokens"] = c_tok
+                    llm_span["total_tokens"] = p_tok + c_tok
+                    llm_span["output"] = resp.choices[0].message.model_dump()
+                    result.prompt_tokens += p_tok
+                    result.completion_tokens += c_tok
+
+                msg = resp.choices[0].message
+                messages.append(msg.model_dump(exclude_none=True))
+
+                if not msg.tool_calls:
+                    result.answer = msg.content or ""
+                    result.stopped_because = "final_answer"
+                    break
+
+                for call in msg.tool_calls:
+                    name = call.function.name
+                    idx = len(result.steps) + 1
+                    started = time.time()
+                    step = Step(index=idx, tool_name=name, args={})
+                    with recorder.span("TOOL", name, tool_name=name) as tool_span:
+                        tool_span["input"] = {"name": name, "raw_arguments": call.function.arguments}
+                        try:
+                            step.args = json.loads(call.function.arguments or "{}")
+                        except json.JSONDecodeError as exc:
+                            step.error = f"tool arguments were not valid JSON: {exc}"
+                            tool_span["error"] = step.error
+                            if self.retry_on_parse_error:
+                                messages.append(
+                                    {
+                                        "role": "user",
+                                        "content": (
+                                            f"Your arguments for {name} were not valid JSON. "
+                                            "Emit a single valid JSON object."
+                                        ),
+                                    }
+                                )
+                            else:
+                                # The bug-2 failure mode: no recovery, no
+                                # clarification — the run must not raise out.
+                                result.error = step.error
+                                result.stopped_because = "parse_error"
+                                step.duration_ms = round((time.time() - started) * 1000, 2)
+                                result.steps.append(step)
+                                if self.on_step:
+                                    self.on_step(step)
+                                result.answer = ""
+                                return result
+                            step.duration_ms = round((time.time() - started) * 1000, 2)
+                            result.steps.append(step)
+                            if self.on_step:
+                                self.on_step(step)
+                            continue
+
+                        tool_span["input"] = {"name": name, "args": step.args}
+                        try:
+                            step.output = dispatch(name, step.args)
+                            # A tool that returns a string is claiming to be
+                            # JSON. If the caller must parse it, it had better
+                            # be parseable — this is where bug 2 surfaces.
+                            if isinstance(step.output, str):
+                                step.output = json.loads(step.output)
+                            tool_span["output"] = step.output
+                        except Exception as exc:
+                            step.error = f"{type(exc).__name__}: {exc}"
+                            tool_span["error"] = step.error
+                            if not self.retry_on_parse_error:
+                                result.error = step.error
+                                result.stopped_because = "parse_error"
+                                step.duration_ms = round((time.time() - started) * 1000, 2)
+                                result.steps.append(step)
+                                if self.on_step:
+                                    self.on_step(step)
+                                result.answer = ""
+                                return result
+
+                    step.duration_ms = round((time.time() - started) * 1000, 2)
+                    result.steps.append(step)
+                    if self.on_step:
+                        self.on_step(step)
+                    messages.append(
+                        {
+                            "role": "tool",
+                            "tool_call_id": call.id,
+                            "content": json.dumps(step.output, default=str),
+                        }
+                    )
+
+        result.neatlogs_active = neatlogs_active()
+        return result
+
+
+def run_patient(question: str, recorder, config: dict | None = None) -> RunResult:
+    agent = PatientAgent(config or load_config())
+    return agent.run(question, recorder)

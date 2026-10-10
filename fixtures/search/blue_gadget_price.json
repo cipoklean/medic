@@ -1,0 +1,15 @@
+{
+  "query": "blue gadget price",
+  "results": [
+    {
+      "title": "Gadget Hub blue gadget",
+      "url": "https://example.com/blue-gadget",
+      "snippet": "The blue gadget retails for $79.99."
+    },
+    {
+      "title": "Gadget Hub accessories",
+      "url": "https://example.com/gadget-accessories",
+      "snippet": "Replacement straps and cases available separately."
+    }
+  ]
+}

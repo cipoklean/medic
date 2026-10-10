@@ -1,0 +1,11 @@
+.env
+.env.bak*
+.venv/
+__pycache__/
+*.pyc
+runs/*
+!runs/samples/
+!runs/samples/**
+.pytest_cache/
+*.db
+.DS_Store

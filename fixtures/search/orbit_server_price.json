@@ -1,0 +1,10 @@
+{
+  "query": "orbit server price",
+  "results": [
+    {
+      "title": "Orbit Servers pricing",
+      "url": "https://example.com/orbit-pricing",
+      "snippet": "Orbit Compute Basic is $450.00 per month."
+    }
+  ]
+}

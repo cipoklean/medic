@@ -1,0 +1,15 @@
+{
+  "query": "widget price",
+  "results": [
+    {
+      "title": "Widget Corp price list",
+      "url": "https://example.com/widget-price",
+      "snippet": "Standard widget unit price is $128.40 as of Q3."
+    },
+    {
+      "title": "Widget bulk discount",
+      "url": "https://example.com/widget-bulk",
+      "snippet": "Bulk orders of 250+ get 12% off."
+    }
+  ]
+}
