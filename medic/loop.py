@@ -79,7 +79,7 @@ def _write(config: dict) -> None:
     MEDIC_YAML.write_text(yaml.safe_dump(config, sort_keys=False, allow_unicode=True))
 
 
-def _medic_recorder(bug: str, attempt: int) -> Recorder:
+def _medic_recorder(bug: str, attempt: int, mode: str = "scripted") -> Recorder:
     """Medic's OWN calls get their own trace, separate from the patient's.
 
     Without this, diagnose and surgeon emit no spans at all and the cost of the
@@ -101,6 +101,7 @@ def _reproduce(bug: str, config: dict, mode: LLMMode):
 
 def heal(
     bug: str | None = None,
+    preset: str | None = None,
     trace_id: str | None = None,
     apply_patch: bool = False,
     console=None,
@@ -118,10 +119,10 @@ def heal(
             "hard check applies to it"
         )
 
-    reset_bug(bug)
-    config = apply_bug(bug, write=False)
+    reset_bug(preset or bug)
+    config = apply_bug(preset or bug, write=False)
 
-    emit("header", {"bug": bug, "mode": mode})
+    emit("header", {"bug": bug, "preset": preset or bug, "mode": mode})
 
     tid, result, verdict, metrics = _reproduce(bug, config, mode)
     emit("before_run", {"trace_id": tid, "verdict": verdict.to_dict(), "metrics": metrics})
@@ -148,7 +149,7 @@ def heal(
     for attempt_no in range(1, max_attempts + 1):
         emit("attempt_start", {"attempt": attempt_no})
         att = Attempt(number=attempt_no)
-        med_rec = _medic_recorder(bug, attempt_no)
+        med_rec = _medic_recorder(bug, attempt_no, mode)
 
         trace: Trace | None = load_trace(trace_id or tid)
         if trace is None:

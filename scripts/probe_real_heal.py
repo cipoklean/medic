@@ -54,13 +54,13 @@ def readback(run_id: str, trace_id: str | None) -> dict:
     }
 
 
-def baseline(bug: str) -> dict:
+def baseline(bug: str, preset: str | None = None) -> dict:
     """The failing run, on the buggy preset, with a real model."""
-    task = train_task_for(bug)
+    task = train_task_for(bug, preset=preset)
     if task is None:
         raise SystemExit(f"no train task for {bug}")
-    reset_bug(bug)
-    config = apply_bug(bug, write=False)
+    reset_bug(preset or bug)
+    config = apply_bug(preset or bug, write=False)
     rec = tracing.new_run("patient-agent", tags=[f"bug={bug}", "phase=before", "llm=real"])
     result = run_once(task["question"], rec, config, mode="real")
     verdict = run_checks(bug, task, result)
@@ -84,6 +84,9 @@ def baseline(bug: str) -> dict:
 
 def main() -> int:
     bug = "loop"
+    preset = sys.argv[1] if len(sys.argv) > 1 else None
+    if preset:
+        print(f"using strengthened preset: {preset}")
     live = init_tracing()
     print(f"neatlogs active: {live}")
     print("=" * 74)
@@ -91,7 +94,7 @@ def main() -> int:
     print("=" * 74)
 
     print("\n[1/3] baseline (buggy preset, real model)…")
-    before = baseline(bug)
+    before = baseline(bug, preset)
     print(f"      {'PASS' if before['passed'] else 'FAIL'} [{before['failure_type']}] "
           f"{before['reason'][:60]}")
     print(f"      {before['metrics']['steps']} steps · "
@@ -100,7 +103,7 @@ def main() -> int:
     print(f"      neatlogs trace: {before['neatlogs_trace_id']}")
 
     print("\n[2/3] heal loop (diagnose -> patch -> verify)…")
-    outcome = heal(bug=bug, mode="real", max_attempts=3)
+    outcome = heal(bug=bug, preset=preset or bug, mode="real", max_attempts=3)
     tracing.shutdown()
     print(f"      healed: {outcome.healed}  attempts: {len(outcome.attempts)}")
 
@@ -132,7 +135,7 @@ def main() -> int:
               f"{(a.verify or {}).get('all_passed')}")
 
     print("\n[3/3] clean-baseline control…")
-    reset_bug(bug)
+    reset_bug(preset or bug)
     clean = clean_config()
     control_task = train_task_for(bug)
     if control_task is None:
@@ -179,7 +182,8 @@ def main() -> int:
         "clean_control": control,
         "heldout_task_ids": [t["id"] for t in heldout_for(bug)],
     }
-    out = Path(__file__).resolve().parents[1] / "evidence" / "real_heal_loop.json"
+    suffix = f"_{preset}" if preset else ""
+    out = Path(__file__).resolve().parents[1] / "evidence" / f"real_heal_loop{suffix}.json"
     out.write_text(json.dumps(report, indent=2, default=str))
     print(f"\nwrote {out}")
     print(f"\nHEALED: {outcome.healed}")

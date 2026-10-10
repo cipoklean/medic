@@ -35,8 +35,18 @@ def tasks_for(bug: str, split: str = "train") -> list[dict]:
     return [t for t in _load_all(path) if t.get("bug") == bug]
 
 
-def train_task_for(bug: str) -> dict | None:
+def train_task_for(bug: str, preset: str | None = None) -> dict | None:
+    """The train task for a bug.
+
+    `preset` selects a strengthened VARIANT of the same bug: a task may carry
+    `preset: loop_strong`, and it still runs the `loop` hard check. That keeps
+    the variant a presentation choice rather than a new bug to justify.
+    """
     found = tasks_for(bug, "train")
+    if preset:
+        for task in found:
+            if task.get("preset") == preset:
+                return task
     return found[0] if found else None
 
 

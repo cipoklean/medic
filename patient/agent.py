@@ -8,6 +8,7 @@ Medic — which is the point.
 from __future__ import annotations
 
 import json
+import os
 import time
 from dataclasses import dataclass, field
 from typing import Any, Callable
@@ -92,6 +93,33 @@ class PatientAgent:
         except Exception:
             return llm_settings()["model"]
 
+    def _max_tokens(self) -> int:
+        """Cap the per-call completion budget so a run stays affordable.
+
+        MEDIC_MAX_TOKENS (default 16384) — measured safe on OpenRouter: unset,
+        OpenRouter reserves 65,536 and rejects on insufficient credit; 16,384
+        runs fine and costs $0.000021 per small call.
+        """
+        try:
+            return int(os.environ.get("MEDIC_MAX_TOKENS", "16384"))
+        except ValueError:
+            return 16384
+
+    def _provider_routing(self) -> dict | None:
+        """Upstream pinning, when the resolved provider configures it.
+
+        Without this the patient ignores LLM_ROUTE_* entirely, so a run could
+        be measured on the wrong upstream while the routing header says
+        otherwise.
+        """
+        try:
+            from medic.providers import build_client
+
+            _, provider = build_client()
+            return provider.routing()
+        except Exception:
+            return None
+
     def _client(self):
         """An injected client wins; otherwise build a real one.
 
@@ -148,8 +176,17 @@ class PatientAgent:
 
                 with recorder.span("LLM", f"llm_call_{len(result.steps) + 1}",
                                    {"messages": len(messages)}) as llm_span:
+                    routing = self._provider_routing()
                     resp = client.chat.completions.create(
                         model=model,
+                        # Providers that bill against the model's advertised
+                        # max_completion_tokens reject a request that reserves
+                        # more than the account can afford: OpenRouter returned
+                        # 402 'requested up to 65536 tokens, can only afford
+                        # 22685' when max_tokens was left unset. Capping it
+                        # keeps a run affordable; the agent never needed more.
+                        max_tokens=self._max_tokens(),
+                        **({"extra_body": {"provider": routing}} if routing else {}),
                         messages=messages,
                         tools=tools,
                         temperature=0,

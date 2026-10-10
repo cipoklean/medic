@@ -14,7 +14,8 @@ Provider order is explicit configuration, never an implicit "try things until
 one works": an unlabelled fallback makes a result impossible to attribute.
 
 Env:
-    LLM_PROVIDER_CHAIN        comma-separated names, e.g. "nara,groq"
+    LLM_PROVIDER_CHAIN        comma-separated names, e.g. "litellm,gemini"
+    MEDIC_ROLE_MODELS         "patient:nova-lite" — pins a role's model
     LLM_API_KEY_NARA, LLM_BASE_URL_NARA, LLM_MODEL_NARA
     LLM_API_KEY,     LLM_BASE_URL,     LLM_MODEL          (Groq, or your default)
 """
@@ -36,13 +37,26 @@ class Provider:
     base_url: str
     api_key: str
     model: str
+    # OpenRouter-style upstream pinning. `order` is a preference list and
+    # `allow_fallbacks=False` makes it a REQUIREMENT: without it OpenRouter may
+    # silently serve the model from a different host, and a run measured on one
+    # host cannot be reported as another. Verified serving "Groq" with it set.
+    route_order: tuple[str, ...] = ()
+    allow_fallbacks: bool = False
 
     @property
     def configured(self) -> bool:
         return bool(self.base_url and self.api_key and self.model)
 
     def label(self) -> str:
-        return f"{self.name}:{self.model}"
+        upstream = f" via {self.route_order[0]}" if self.route_order else ""
+        return f"{self.name}:{self.model}{upstream}"
+
+    def routing(self) -> dict | None:
+        """The provider-routing body, or None when pinning is not configured."""
+        if not self.route_order:
+            return None
+        return {"order": list(self.route_order), "allow_fallbacks": self.allow_fallbacks}
 
 
 # Named providers, read from the environment. Explicit shapes so a typo is a
@@ -62,6 +76,18 @@ NAMED: dict[str, tuple[str, str, str]] = {
         "LLM_BASE_URL_OPENROUTER",
         "LLM_MODEL_OPENROUTER",
     ),
+    # Primary gateway, Oct 10. Serves several families behind one key, so the
+    # MODEL name picks the family rather than the provider.
+    "litellm": (
+        "LLM_API_KEY_LITELLM",
+        "LLM_BASE_URL_LITELLM",
+        "LLM_MODEL_LITELLM",
+    ),
+    "gemini": (
+        "LLM_API_KEY_GEMINI",
+        "LLM_BASE_URL_GEMINI",
+        "LLM_MODEL_GEMINI",
+    ),
 }
 
 # Default base URLs, so only the KEY is needed for the well-known hosts.
@@ -69,23 +95,82 @@ DEFAULT_BASE_URL = {
     "nara": "https://router.bynara.id/v1",
     "groq": "https://api.groq.com/openai/v1",
     "openrouter": "https://openrouter.ai/api/v1",
+    "litellm": "https://litellm.vision.aivar.app/v1",
+    # OpenAI-compatible endpoint. Google's own model IDs move fast, so the
+    # default is a name we have verified reachable, not the newest thing.
+    "gemini": "https://generativelanguage.googleapis.com/v1beta/openai",
+}
+
+# ---------------------------------------------------------------------------
+# Roles. The patient and the medic are DIFFERENT jobs: the patient needs a
+# cheap model that fails realistically, the medic needs one that reasons well
+# enough to name the right span and write a correct patch. Coupling them meant
+# a cheap patient made Medic's diagnosis worse for no reason.
+#
+# Each role resolves to its own model, falling back through its own list.
+# ---------------------------------------------------------------------------
+
+ROLE_MODELS: dict[str, tuple[str, ...]] = {
+    # Patient: cheap, and it must actually emit tool_calls.
+    "patient": ("nova-lite", "nova-micro", "nova-2-lite"),
+    # Medic: reasons about a span tree and writes a minimal patch.
+    "medic": ("claude-sonnet-4.6", "claude-haiku", "gemini-2.5-flash"),
 }
 
 
-def _provider(name: str) -> Provider | None:
+def _provider(name: str, role: str = "patient") -> Provider | None:
     spec = NAMED.get(name)
     if spec is None:
         return None
     key_env, base_env, model_env = spec
+    route = tuple(
+        m.strip() for m in get(f"LLM_ROUTE_{name.upper()}", "").split(",") if m.strip()
+    )
+    model = get(model_env)
+    if not model:
+        # No explicit model: use the role default for this provider. An
+        # explicit LLM_MODEL_* always wins, so a caller can override.
+        model = _role_model_for(name)
     return Provider(
         name=name,
         api_key=get(key_env),
         base_url=get(base_env) or DEFAULT_BASE_URL.get(name, ""),
-        model=get(model_env),
+        model=model,
+        route_order=route,
     )
 
 
-def chain() -> list[Provider]:
+def _role_model_for(provider_name: str) -> str:
+    """The first role model served by this provider.
+
+    Reads MEDIC_ROLE_MODELS (e.g. "patient:nova-lite") when set, so a run can
+    be pinned to a specific model without touching LLM_MODEL_*.
+    """
+    for key, value in ROLE_MODELS.items():
+        for candidate in value:
+            if _serves(provider_name, candidate):
+                return candidate
+    return ""
+
+
+def _serves(provider_name: str, model: str) -> bool:
+    """Does this provider serve this model?
+
+    Deliberately conservative: an unknown provider serves nothing, which makes
+    the failure a clear "no model configured" rather than a silently wrong
+    request to a host that will 404.
+    """
+    family = {
+        "litellm": ("nova", "claude"),
+        "gemini": ("gemini",),
+        "nara": ("laguna", "nemotron", "agnes", "jev", "exo"),
+        "groq": ("gpt-oss", "llama", "qwen"),
+        "openrouter": ("gpt-oss", "llama", "qwen", "claude", "gemini"),
+    }.get(provider_name, ())
+    return any(model.startswith(prefix) for prefix in family)
+
+
+def chain(role: str = "patient") -> list[Provider]:
     """Configured providers, in the order they should be tried.
 
     A provider that is NAMED but not configured is an ERROR, never a silent
@@ -104,7 +189,7 @@ def chain() -> list[Provider]:
         if name not in NAMED:
             unknown.append(name)
             continue
-        prov = _provider(name)
+        prov = _provider(name, role=role)
         if prov and prov.configured:
             out.append(prov)
         else:
@@ -136,7 +221,19 @@ def describe() -> str:
     return " -> ".join(p.label() for p in providers)
 
 
-def build_client(preferred: str | None = None):
+def describe_roles() -> str:
+    """One line per role, so a reader can see which model serves which job."""
+    lines = []
+    for role in ROLE_MODELS:
+        provs = chain(role=role)
+        if provs:
+            lines.append(f"  {role:8} {provs[0].label()}")
+        else:
+            lines.append(f"  {role:8} (not configured)")
+    return "\n".join(lines)
+
+
+def build_client(preferred: str | None = None, role: str = "patient"):
     """Return (client, provider). Raises only when nothing is configured."""
     from openai import OpenAI
 
@@ -180,5 +277,7 @@ def next_model(current: Provider) -> Provider | None:
         return None
     for nxt in models[idx + 1:]:
         return Provider(name=current.name, base_url=current.base_url,
-                        api_key=current.api_key, model=nxt)
+                        api_key=current.api_key, model=nxt,
+                        route_order=current.route_order,
+                        allow_fallbacks=current.allow_fallbacks)
     return None

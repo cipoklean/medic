@@ -105,6 +105,19 @@ shown to diagnose or surgeon.
 
 Full record: [`evidence/real_heal_loop.json`](evidence/real_heal_loop.json).
 
+### Disclosure: the demo preset was strengthened
+
+The live take runs `bugs/presets/loop_strong.yaml` on `nara/laguna-s-2.1`.
+**That preset was deliberately strengthened** so a well-behaved model would
+misbehave — the original `loop.yaml` does not reproduce on it. It reproduced
+**2 of 2 runs**, at 40 steps (37–38 of them `web_search`).
+
+`bugs/presets/loop.yaml` is unchanged, and so are the rows in
+`evidence/loop_capability_matrix.json` that record the original preset's
+results. Both presets are in the repo so the difference is inspectable, and any
+number from `loop_strong` is labelled as a strengthened preset rather than
+passed off as a naturally discovered failure.
+
 ### The same buggy prompt breaks one model and not three others
 
 This is the sharpest thing we measured, and it is a 10-second beat in the demo:
@@ -115,7 +128,7 @@ This is the sharpest thing we measured, and it is a 10-second beat in the demo:
 | `nara/laguna-s-2.1` | PASS, 3 steps | PASS, 4 steps | no |
 | `nara/nemotron-3-ultra-free` | PASS, 3 steps | PASS, 4 steps | no |
 | `nara/agnes-2.5-flash` | PASS, 4 steps | PASS, 5 steps | no |
-| `openrouter/openai/gpt-oss-20b` | PASS, 3 steps | **FAIL** — 1 step, empty response | **yes, differently** |
+| `openrouter/openai/gpt-oss-20b` (pinned to Groq) | PASS, 4 steps | PASS, 7 steps | no |
 
 Identical prompt, identical task, identical fixtures. The buggy prompt costs
 every model one extra search — the budget pressure is visible in the tokens —
@@ -125,11 +138,16 @@ but only `gpt-oss-20b` runs away.
 case nobody spots by re-reading the prompt: it looks fine, and it is fine, on
 the three models where it is fine.
 
-The same model name on a *different host* fails differently too: `gpt-oss-20b`
-runs away for 12 steps on Groq, and returns one empty response on OpenRouter.
-Two hosts, two faults, one prompt — which is the argument for a tool that reads
-the trace instead of judging the config. Full data:
+The strongest row is the last one: `gpt-oss-20b` reached through OpenRouter
+with routing **pinned to Groq** — same weights, same upstream, verified by the
+provider's own `served provider: Groq` — runs 7 steps and passes, where Groq
+direct ran 12 and failed. **The route is part of the system under test.** That is
+the argument for reading the trace instead of judging the config. Full data:
 [`evidence/loop_capability_matrix.json`](evidence/loop_capability_matrix.json).
+
+When the prompt is strengthened enough, the well-behaved model breaks too:
+`nara/laguna-s-2.1` at 40 steps, 2 of 2 runs. That is the preset the demo uses,
+and it is disclosed above.
 
 ### Bug reproduction, other bugs
 

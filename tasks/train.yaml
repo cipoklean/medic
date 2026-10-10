@@ -34,3 +34,13 @@ question: >-
 expected_answer: 1350.0
 max_steps_allowed: 8
 check: citations_must_be_fetched
+
+---
+id: loop-strong-widgets
+bug: loop
+question: >-
+  ACME Corp ordered 250 standard widgets. What is the total cost after the
+  volume discount? Use the calculator and give me the final number.
+expected_answer: 28248.0
+max_steps_allowed: 8
+preset: loop_strong

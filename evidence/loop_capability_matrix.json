@@ -73,23 +73,41 @@
     },
     {
       "model": "openai/gpt-oss-20b",
-      "provider": "openrouter",
+      "provider": "openrouter (pinned upstream: groq, allow_fallbacks=false)",
       "clean": {
         "passed": true,
-        "steps": 3,
-        "tokens": 2913
+        "steps": 4,
+        "tokens": 4004
+      },
+      "buggy": {
+        "passed": true,
+        "steps": 7,
+        "tokens": 11365
+      },
+      "reproduces": false,
+      "note": "THE SAME WEIGHTS AND THE SAME UPSTREAM as the groq-direct row, reached through OpenRouter with provider routing pinned to groq (allow_fallbacks=false, verified served_provider='Groq'). Groq direct gives a 12-step FAIL; the identical model via the routing layer gives 7 steps and PASSES. The routing layer changes behaviour - plausibly a different backend or sampling path behind the same weights. This is the strongest argument in the project for reading the TRACE rather than judging the CONFIG: two runs, same prompt, same weights, different host, different outcome.",
+      "measured": "2026-10-10, evidence/repro_openrouter_via_groq.json"
+    },
+    {
+      "model": "laguna-s-2.1",
+      "provider": "nara",
+      "preset": "loop_strong",
+      "clean": {
+        "passed": true,
+        "steps": "4-5",
+        "tokens": "~5,000-5,600"
       },
       "buggy": {
         "passed": false,
-        "steps": 1,
-        "tokens": 1111
+        "steps": 40,
+        "tokens": "92,524 and 180,253"
       },
       "reproduces": true,
-      "failure_mode": "empty_response",
-      "note": "DIFFERENT FAULT from the same model on groq. On groq the buggy prompt caused a 12-step overrun; on openrouter the run ended after ONE step because turn 2 returned neither content nor a tool call. Both are real model misbehaviour under the same prompt, but they are not the same bug, and the OpenRouter one exposed a defect in Medic: an empty response was being recorded as stopped_because=final_answer with an empty answer, so a genuine model fault read as a legitimate empty conclusion. Now reported as failure_type=other with stopped_because=empty_response."
+      "note": "Reproduced 2 of 2 runs (stopped at the threshold). Uses the STRENGTHENED preset bugs/presets/loop_strong.yaml - the original loop.yaml does NOT reproduce on this model. 37-38 of the 40 steps are web_search. A clean laguna run costs ~5,000 tokens, so the buggy run is 20-36x the cost of a healthy one.",
+      "measured": "2026-10-10, evidence/repro_loop_strong_laguna.json"
     }
   ],
-  "finding": "The buggy prompt reliably costs these models one extra search and 400-1,400 extra tokens \u2014 the budget pressure is visible \u2014 but none of them runs away. gpt-oss-20b is the only one that exceeds the step limit, by 50%. The SAME model name on a DIFFERENT host fails differently: 12-step overrun on groq, single empty response on openrouter.",
+  "finding": "The buggy prompt reliably costs these models one extra search and 400-1,400 extra tokens \u2014 the budget pressure is visible \u2014 but none of them runs away. gpt-oss-20b is the only one that exceeds the step limit, by 50%. The SAME model name on a DIFFERENT host fails differently: 12-step overrun on groq, single empty response on openrouter. Pinned routing to the same upstream still changed the outcome (12 steps FAIL direct, 7 steps PASS via OpenRouter), so the route is part of the system under test.",
   "interpretation": "This is a capability difference, not a fluke. A model that keeps re-searching despite an explicit licence to stop has weaker instruction-following on termination. It does NOT mean the loop bug is fake: it reproduces on the one model tested that misbehaves, it reproduces deterministically with the scripted agent, and a real deployment would run a spread of models including weaker ones.",
   "consequence_for_the_demo": "The demo needs a genuine, REPRODUCIBLE failure. groq gives a 12-step overrun that is easy to show and easy to fix (6 steps after). OpenRouter's empty response is also a real fault but is a worse demo: it ends in one step, so there is no visible runaway behaviour, and it may not recur on every run. Use groq for the demo take; keep openrouter as the same-model fallback for when groq's daily budget is exhausted, and be explicit on camera about which provider served the run.",
   "cost_of_this_choice": "Groq's free tier is 200,000 tokens/day and a looping run alone costs ~23,000 of it. A single demo day of rehearsals could exhaust the budget. This is the single largest demo-day risk and is recorded as such.",

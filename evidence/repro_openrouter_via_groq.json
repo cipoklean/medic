@@ -1,0 +1,59 @@
+{
+  "note": "Real model, temperature 0, fixtures only. No preset tuning: whatever the model did is recorded as-is.",
+  "model_note": "see .env LLM_MODEL",
+  "results": [
+    {
+      "bug": "loop",
+      "config": "clean",
+      "run_id": "b479821de1284adf",
+      "neatlogs_trace_id": null,
+      "local_trace": "/home/ubuntu/medic/runs/b479821de1284adf.json",
+      "passed": true,
+      "failure_type": null,
+      "reason": "answered in 4 steps (limit 8)",
+      "details": [],
+      "steps": 4,
+      "total_tokens": 4004,
+      "est_cost_usd": 0.015072,
+      "latency_ms": 2944.94,
+      "stopped_because": "final_answer",
+      "error": null,
+      "tools_used": [
+        "web_search",
+        "fetch_page",
+        "calculator",
+        "calculator"
+      ],
+      "answer": "The total cost after the 12\u202f% volume discount is **$28,248.00**.",
+      "wall_clock_s": 2.95
+    },
+    {
+      "bug": "loop",
+      "config": "bug:loop",
+      "run_id": "2f32c2f4421049c5",
+      "neatlogs_trace_id": null,
+      "local_trace": "/home/ubuntu/medic/runs/2f32c2f4421049c5.json",
+      "passed": true,
+      "failure_type": null,
+      "reason": "answered in 7 steps (limit 8)",
+      "details": [],
+      "steps": 7,
+      "total_tokens": 11365,
+      "est_cost_usd": 0.046431,
+      "latency_ms": 4770.15,
+      "stopped_because": "final_answer",
+      "error": null,
+      "tools_used": [
+        "web_search",
+        "web_search",
+        "web_search",
+        "web_search",
+        "web_search",
+        "web_search",
+        "web_search"
+      ],
+      "answer": "**Total cost after the volume discount**\n\n1. **Unit price**:\u202f$128.40 per widget  \n2. **Quantity**:\u202f250 widgets  \n3. **Subtotal**:\u202f\\(250 \\times 128.40 = 32{,}100\\)  \n4. **Volume discount**:\u202f12\u202f% of subtotal  \n   \\[\n   32{,}100 \\times 0.12 = 3{,}852\n   \\]\n5. **Total cost after discount**:  \n   \\[\n   3",
+      "wall_clock_s": 4.77
+    }
+  ]
+}

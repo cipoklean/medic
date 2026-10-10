@@ -10,28 +10,31 @@ on this list, do not say it.
 
 ## BUDGET PLAN — read before you record
 
-Groq: **200,000 tokens/day.** Measured costs:
+**The take runs on `nara/laguna-s-2.1`** (free tier, 7M tokens/day). Groq left
+the chain on Oct 10 — see "Historical evidence" below. Measured costs:
 
 | Command | Tokens | Evidence |
 |---|---|---|
 | `cli.py doctor` | ~100 | — |
-| `cli.py run --bug loop --llm real` | ~4,000 clean / ~23,000 buggy | `real_heal_loop.json` |
-| `cli.py heal --bug loop --llm real` | **~31,000 + Medic's own calls** | `real_heal_loop.json` |
-| — buggy reproduce | 15,478 | 10 steps |
-| — rerun, train | 7,587 | 6 steps |
-| — rerun, held-out ×2 | 7,695 | 5 + 3 steps |
-| Medic diagnose + surgeon | **not yet measured** — capture added, pending | — |
+| clean run (the hook) | ~5,000 | `repro_loop_strong_laguna.json` |
+| buggy run, `loop_strong` | **92,000–180,000** | `repro_loop_strong_laguna.json` |
+| — 37–38 of those steps are `web_search` | | |
+| rerun after the patch | measured in `real_heal_loop_loop_strong.json` | |
+| Medic diagnose + surgeon | measured, see the magenta panel | |
 
-**One clean take ≈ 36,000–46,000 tokens ≈ 18–23% of the daily budget.**
-**4 takes per day, maximum.**
+**A buggy run is 20–36× the cost of a healthy one** (~5,000 tokens). That ratio
+is the demo's second punchline, alongside the token saving.
+
+NaraRouter's free tier is 7M tokens/day, so a take costs ~2% of it. Rehearse
+freely.
 
 ### Commands that spend Groq tokens
 
 | # | Command | Spend | When |
 |---|---|---|---|
-| 1 | `cli.py doctor` | ~100 | pre-flight, fine |
-| 2 | `cli.py run --bug loop --llm real` | ~4k–23k | **demo take only** |
-| 3 | `cli.py heal --bug loop --llm real` | ~31k + medic | **demo take only** |
+| 1 | `cli.py doctor` | ~100 | pre-flight |
+| 2 | `cli.py run --bug loop_strong --llm real` | 90k–180k | **take only** |
+| 3 | `cli.py heal --bug loop_strong --llm real` | + patch + verify | **take only** |
 | 4 | `scripts/smoke_tool_calling.py` | ~50/model | never on a record day |
 
 **Rule: rehearse on `--llm scripted` (free, offline, deterministic). Run the
@@ -43,25 +46,30 @@ real take ONCE, at the end.**
 .venv/bin/python cli.py heal --bug loop --llm scripted   # reports "needs a key" — expected
 .venv/bin/python cli.py report
 
-# REAL TAKE — one pass, ~36-46k tokens
+# REAL TAKE — one pass
 set -a && . ./.env && set +a
+export LLM_PROVIDER_CHAIN=nara
 .venv/bin/python cli.py doctor
-.venv/bin/python cli.py run  --bug loop --llm real
-.venv/bin/python cli.py heal --bug loop --llm real
+.venv/bin/python cli.py run  --bug loop_strong --llm real
+.venv/bin/python cli.py heal --bug loop_strong --llm real
 ```
 
 ### Backup take
 
 ```bash
-export LLM_PROVIDER_CHAIN=openrouter
+export LLM_PROVIDER_CHAIN=nara
+LLM_MODEL_NARA=nemotron-3-ultra-free      # or agnes-2.5-flash
 ```
 
-**Say on camera:** "Same model, different host. Groq gave a 12-step overrun;
-OpenRouter gives a single empty response. The fault is model-and-host specific —
-that's the point of the next beat."
+Both are verified tool-calling and verified on the full patient loop. Say which
+model served the run.
 
-**If both are dead:** scripted take, clearly labelled. A labelled deterministic
-run is honest; an improvised claim is not.
+**If NaraRouter is down:** scripted take, clearly labelled. A labelled
+deterministic run is honest; an improvised claim is not.
+
+**Do not rehearse on OpenRouter.** Its credit balance is low — a single run can
+return `402 insufficient credits`. Cost per take would be ~$0.003, but the
+balance is the constraint, not the price.
 
 ---
 
@@ -70,16 +78,25 @@ run is honest; an improvised claim is not.
 ### 0:00–0:10 — THE HOOK
 
 ```bash
-.venv/bin/python cli.py run --bug loop --llm real
+.venv/bin/python cli.py run --bug loop_strong --llm real
 ```
 
 **"Agents don't crash. They quietly go wrong. This agent asked one question. It
-used twelve steps, burned twenty-three thousand tokens, and never stopped."**
+used forty steps — its limit was eight — and burned over ninety thousand tokens
+looking for the same price."**
 
-On screen: `[loop] used 12 steps, over the limit of 8` · `23,136 tokens` ·
-trace ID.
+On screen: `[loop] used 40 steps, over the limit of 8` · trace ID.
 
-**Say the provider out loud:** "That's `groq/openai/gpt-oss-20b`."
+**Say the provider out loud:** "That's `nara/laguna-s-2.1`."
+
+**If you must disclose the preset:** "I strengthened the prompt so it
+misbehaves on this model — it's labelled in the repo as `loop_strong`."
+
+### Historical evidence — only if asked
+
+Twelve steps / 23,136 tokens on `groq/openai/gpt-oss-20b`, **Oct 10**. Groq left
+the chain because its free tier allowed four takes a day. Say "Groq, Oct 10" and
+move on.
 
 ---
 
@@ -146,19 +163,25 @@ its job."
 
 ### 1:20–1:45 — CAPABILITY MATRIX (the beat that makes it a product)
 
-| Model | clean | same buggy prompt |
+| Route | clean | same buggy prompt |
 |---|---|---|
-| `groq/openai/gpt-oss-20b` | PASS 4 steps | **FAIL 12 steps** |
-| `openrouter/openai/gpt-oss-20b` | PASS 3 steps | **FAIL 1 step, empty response** |
-| `nara/laguna-s-2.1` | PASS 3 steps | PASS 4 steps |
-| `nara/nemotron-3-ultra-free` | PASS 3 steps | PASS 4 steps |
+| `groq/openai/gpt-oss-20b` — Groq direct, Oct 10 | PASS 4 | **FAIL 12 steps** |
+| `openai/gpt-oss-20b` — same weights, OpenRouter routed to Groq | PASS 4 | PASS 7 steps |
+| `nara/laguna-s-2.1` | PASS 3–5 | PASS 4 steps |
+| `nara/nemotron-3-ultra-free` | PASS 3 | PASS 4 steps |
+| `nara/agnes-2.5-flash` | PASS 4 | PASS 5 steps |
+| `nara/laguna-s-2.1` — **strengthened preset** | PASS 4–5 | **FAIL 40 steps** |
 
-**"Same prompt. Same question. Same data. It breaks on two hosts and not on two
-other models — and nobody catches that by re-reading the prompt, because the
-prompt is fine on the models where it's fine. Medic's job is to catch the
+**"Same prompt. Same question. Same weights — routed to the same upstream — and
+two different outcomes. Twelve steps on one route, seven on another. Nobody
+catches that by re-reading the prompt. Medic's job is to catch the
 model-specific failure in the trace."**
 
 evidence: `loop_capability_matrix.json`
+
+**Optional, if time:** "And when the prompt is strengthened enough, the
+well-behaved model breaks too — 40 steps, 38 of them searches."
+
 
 ---
 
@@ -216,10 +239,10 @@ to write ourselves."**
 
 | Symptom | Do this |
 |---|---|
-| Groq 429 on `run` | Switch to `openrouter`, **say** the symptom changes. Still a real demo. |
-| Both providers dead | Scripted take. **Label it scripted.** |
+| NaraRouter 429 | Switch model to `nemotron-3-ultra-free`, **say** which model. Both reproduce with `loop_strong`. |
+| NaraRouter down | Scripted take. **Label it scripted.** |
 | Heal takes 3 attempts | **Keep going.** That's the product. |
-| Bug doesn't reproduce | Use the capability matrix as-is. "Three of four models don't break on this prompt" is a true result. |
+| Bug doesn't reproduce | It reproduced 2/2 with `loop_strong`. If it still doesn't, the matrix is your beat: "four routes, one prompt, different outcomes" is true and still the point. |
 | Diff panel wraps badly | Zoom out, or skip to the verification table — the numbers are the payload. |
 
 ## DO NOT SAY
@@ -234,7 +257,9 @@ to write ourselves."**
 | File | What it proves |
 |---|---|
 | `evidence/real_heal_loop.json` | the real heal, before/after, held-out included |
-| `evidence/loop_capability_matrix.json` | 4 models, 3 hosts, 1 prompt |
+| `evidence/loop_capability_matrix.json` | 5 rows, 4 routes, 1 prompt |
+| `evidence/repro_loop_strong_laguna.json` | the strengthened preset, 2/2 reproducible |
+| `evidence/repro_openrouter_via_groq.json` | same weights, different route, different outcome |
 | `evidence/recovery_parse_error.json` | recovery from a failed tool call |
 | `evidence/trace_clean_real_llm.json` | a real traced run, readable back |
 | `evidence/tool_calling_free_plan.json` | which models actually call tools |

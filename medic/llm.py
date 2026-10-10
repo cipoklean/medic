@@ -31,7 +31,7 @@ def _client():
     """
     from medic import providers as prov
 
-    client, provider = prov.build_client()
+    client, provider = prov.build_client(role="medic")
     try:
         import neatlogs
 
@@ -96,8 +96,14 @@ def ask_json(
                 else _null_span()
             )
             with span_cm as span:
+                routing = provider.routing()
                 resp = client.chat.completions.create(
                     model=provider.model,
+                    # OpenRouter's upstream pinning is a body field the
+                    # typed create() does not expose, so it goes through
+                    # extra_body. Passing `provider=` directly raises
+                    # TypeError: unexpected keyword argument.
+                    **({"extra_body": {"provider": routing}} if routing else {}),
                     messages=[
                         {"role": "system", "content": system},
                         {"role": "user", "content": user},
@@ -145,7 +151,7 @@ def ask_json(
                     print(f"[medic] {provider.label()} cannot serve this request; "
                           f"rotating to {nxt_model.label()}")
                     provider = nxt_model
-                    client, _ = prov.build_client(preferred=nxt_model.name)
+                    client, _ = prov.build_client(preferred=nxt_model.name, role="medic")
                     budget_attempts = 0
                     continue
             if _is_daily_limit(exc):
@@ -155,7 +161,7 @@ def ask_json(
                     # exactly the answer to it. Fail over and keep going.
                     print(f"[medic] {provider.label()} daily budget exhausted; "
                           f"failing over to {nxt.label()}")
-                    client, provider = prov.build_client(preferred=nxt.name)
+                    client, provider = prov.build_client(preferred=nxt.name, role="medic")
                     continue
                 raise RuntimeError(_daily_limit_message(exc)) from exc
             if _is_rate_limited(exc):

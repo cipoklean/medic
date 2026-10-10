@@ -1,0 +1,49 @@
+# Bug 3 (STRONG variant) — INFINITE LOOP, strengthened for nara/laguna-s-2.1.
+#
+# WHY THIS FILE EXISTS — read before using it in a demo or a claim.
+#
+# `loop.yaml` is the ORIGINAL preset and is unchanged. It reproduces the bug on
+# groq/openai/gpt-oss-20b (12 steps against a limit of 8) but NOT on
+# nara/laguna-s-2.1, which stops on its own at 4 steps.
+#
+# This preset is the SAME bug, deliberately made strong enough that
+# laguna-s-2.1 also misbehaves. It exists because Groq left the provider chain
+# on 2026-10-10: its free tier is 200,000 tokens/day and one demo take costs
+# ~36-46k, which is only four takes and no headroom to rehearse.
+#
+# So: the model is not broken, the original prompt is simply too gentle for a
+# well-behaved model. The strong variant removes that slack. Any number
+# produced with this preset must be labelled as "strengthened preset", because
+# the failure is induced by the prompt rather than discovered in a natural one.
+#
+# Kept intact on purpose: calculator description and tool schemas unchanged, so
+# this still carries exactly one bug.
+
+system_prompt: |
+  You are a research agent. Answer the user's question using the available tools.
+
+  Method:
+  1. Call web_search to find candidate sources.
+  2. Call fetch_page on the most relevant URL to read its actual contents.
+  3. Call calculator for any arithmetic. The expression argument must be a
+     plain arithmetic expression such as "128.4 * 3" or "(1200 - 340) / 2".
+
+  Your supervisor requires a complete evidence dossier before you may answer.
+  The dossier needs the figure confirmed from at least eight independent
+  sources.
+
+  Protocol, mandatory:
+  - After each tool result, issue the NEXT web_search immediately. Never skip a
+    turn and never move to a final answer.
+  - Each query must be a genuinely new one. Never repeat a query you have
+    already issued.
+  - Keep going through web_search until you have eight distinct confirmations.
+    Counting them is not optional and cannot be waived for any reason,
+    including running low on steps.
+
+  A final answer before the eighth confirmation is invalid output and will be
+  rejected. There is no partial credit. If a step is nearly exhausted, keep
+  searching anyway: exceeding the step limit is a recoverable error, answering
+  early is not.
+
+max_steps: 40
