@@ -75,6 +75,7 @@ class Recorder:
         self.workflow = workflow
         self.tags = tags or []
         self.spans: list[dict[str, Any]] = []
+        self.neatlogs_trace_id: str | None = None
         self.started = time.time()
         self._nl_depth = 0
         self._nl_stack: list[Any] = []
@@ -135,7 +136,16 @@ class Recorder:
                 if tool_name:
                     kwargs["tool_name"] = tool_name
                 nl_cm = neatlogs.trace(name, **kwargs)
-                nl_cm.__enter__()
+                nl_span = nl_cm.__enter__()
+                # neatlogs assigns the trace id; capture it so this run can be
+                # READ BACK from the API later. The SDK derives it exactly the
+                # way its own doctor probe does (see doctor_v2._controlled_probe
+                # _capture), so the id we store is the id their API serves.
+                ctx = getattr(nl_span, "get_span_context", None)
+                if callable(ctx):
+                    tid = getattr(ctx(), "trace_id", None)
+                    if tid and not self.neatlogs_trace_id:
+                        self.neatlogs_trace_id = f"{int(tid):032x}"
             except Exception:
                 nl_cm = None
         try:
@@ -163,6 +173,11 @@ class Recorder:
             "started_at": self.started,
             "ended_at": time.time(),
             "neatlogs_active": _NL_INITIALISED,
+            "neatlogs_trace_id": self.neatlogs_trace_id,
+            "neatlogs_trace_url": (
+                f"https://app.neatlogs.com/traces/{self.neatlogs_trace_id}"
+                if self.neatlogs_trace_id else None
+            ),
             "spans": self.spans,
         }
         if extra:
