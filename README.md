@@ -11,6 +11,9 @@ Built for [neatHack 2026](https://docs.neatlogs.com) · hackathon by **cipoklean
 
 ## The two-minute demo
 
+> Full shot list, including what to say if a provider fails on camera:
+> [`docs/demo_script.md`](docs/demo_script.md).
+
 ```bash
 cd medic
 cp .env.example .env        # add NEATLOGS_API_KEY + an LLM key
