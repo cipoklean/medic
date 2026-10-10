@@ -44,21 +44,46 @@ and proves the fix with **hard, deterministic checks — including on held-out t
 | # | Requirement | State |
 |---|---|---|
 | 1 | Fresh history, commits in-window, `cipoklean` only | ✅ done — see above |
-| 2 | Entire CLI + `--agent <name>` | ⛔ **BLOCKED — needs david's decision** (Hermes unsupported) |
+| 2 | Entire CLI + `--agent <name>` | ✅ **`entire-agent-hermes` WORKS** — see below |
 | 2 | entire-graph installed, files committed | ✅ `entire plugin install graph` v0.4.0; `.entire/graph-agent.md` committed |
-| 2 | checkpoint ID + URL at each CHECKPOINT | ⛔ blocked on #2 enable |
-| 2 | Stretch: diagnosis cites the Entire checkpoint | ⛔ blocked on #2 enable |
-| 3 | `evidence/` folder | 🟡 scaffolded, empty (populated as bugs heal) |
-| 4 | Recovery traced in neatlogs | ⬜ Phase 2 (bug 2 retry path) |
+| 2 | checkpoint ID + URL at each CHECKPOINT | ✅ working — see §2a |
+| 2 | Stretch: diagnosis cites the Entire checkpoint | ⬜ Phase 3 (needs `entire checkpoint explain <sha>` wired into diagnose) |
+| 3 | `evidence/` folder | 🟡 `recovery_parse_error.json` committed; per-bug links in Phase 4 |
+| 4 | Recovery traced in neatlogs | ✅ `scripts/probe_recovery.py` → RECOVERY DEMONSTRATED: True |
 | 5 | `docs/business.md` | 🟡 scaffolded, filled Phase 5 with measured cost-per-heal |
 | 6 | README "Sponsor tools" | ⬜ Phase 5 |
 
-**⛔ BLOCKER — Entire cannot capture Hermes sessions natively.** `entire agent list` supports
-`antigravity, claude-code, codex, copilot-cli, cursor, factoryai-droid, opencode, pi`. Hermes is not
-among them, and `entire status` → `○ not set up`. Entire *does* document a supported escape hatch:
-an **Agent Integration Protocol** executable named `entire-agent-<name>` on `$PATH` plus
-`{"external_agents": true}` in `.entire/settings.json`. Writing one is real implementation work, and
-david said to flag rather than improvise. **Awaiting his call (see §9).**
+### 2a. ENTIRE CHECKPOINT — the integration works (2026-10-10 08:25 WAT)
+
+**Checkpoint ID: `01M4JB59S0C8NN6N28S7F24EYW`**
+**URL: https://entire.io/gh/cipoklean/medic/commit/9eb288b**
+Session `20261009_191831_9554f70b` · agent `Hermes` · 5 turns · commit `9eb288b`.
+
+Hermes was NOT one of Entire's eight built-in agents. `tools/entire-agent-hermes`
+implements the documented **Agent Integration Protocol v1**, reading real session
+data from `~/.hermes/state.db`:
+
+| protocol command | reads |
+|---|---|
+| `resolve-session-file` | materialises the transcript to a real `.jsonl` |
+| `read-transcript` / `chunk-transcript` | `messages` (role, content, tool_calls, tool_name) |
+| `extract-prompts` / `extract-modified-files` | user prompts; files from `tool_calls` args |
+| `extract-summary` | `sessions.title` |
+| `calculate-tokens` | `session_model_usage` — REAL counts, not an estimate |
+
+Install: `cp tools/entire-agent-hermes ~/.local/bin/`,
+`{"external_agents": true}` in `.entire/settings.local.json`,
+`entire enable --agent hermes`.
+
+**Known gap (stated, not hidden):** `entire checkpoint tokens` says "Token data:
+unavailable" although `calculate-tokens` returns correct counts when called
+directly (405,676 in / 109,128 out / 248 calls). Entire does not invoke the
+`token_calculator` capability during `session attach`. Declared `true` because the
+subcommand works; the end-to-end number is not yet flowing.
+
+**How a checkpoint is created (no live hooks):** `entire session attach <session-id> --agent hermes`
+materialises the transcript and creates a checkpoint, which then needs an
+`Entire-Checkpoint: <id>` trailer on the commit to attach it.
 
 **Phase status:**
 

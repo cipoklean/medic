@@ -116,7 +116,10 @@ def doctor() -> None:
 
 
 @app.command()
-def run(bug: str = typer.Option(..., "--bug", help=f"one of: {', '.join(BUGS)}")) -> None:
+def run(
+    bug: str = typer.Option(..., "--bug", help=f"one of: {', '.join(BUGS)}"),
+    llm: str = typer.Option("scripted", "--llm", help="scripted (deterministic) or real"),
+) -> None:
     """Inject a bug, run the patient on its train task, show the hard check."""
     from bugs.inject import apply_bug, reset_bug
     from checks.checks import run_checks
@@ -149,13 +152,23 @@ def run(bug: str = typer.Option(..., "--bug", help=f"one of: {', '.join(BUGS)}")
         except Exception as exc:
             console.print(f"  [yellow]step {step.index} {step.tool_name} (render error: {exc})[/yellow]")
 
+    if llm not in ("scripted", "real"):
+        _fail(f"--llm must be 'scripted' or 'real', got {llm!r}")
+        raise typer.Exit(1)
+    console.print(f"[dim]llm mode: {llm}[/dim]")
+
     try:
-        result = run_once(task["question"], recorder, config, on_step=_show)
+        result = run_once(task["question"], recorder, config, on_step=_show, mode=llm)
     except Exception as exc:
         _fail(f"the agent raised {type(exc).__name__}: {exc}")
         raise typer.Exit(3)
 
-    recorder.write({"result": result.to_dict(), "bug": bug, "task_id": task["id"]})
+    recorder.write({
+        "result": result.to_dict(),
+        "bug": bug,
+        "task_id": task["id"],
+        "llm_mode": llm,
+    })
 
     verdict = run_checks(bug, task, result)
     m = measured(result, recorder)
@@ -168,7 +181,7 @@ def run(bug: str = typer.Option(..., "--bug", help=f"one of: {', '.join(BUGS)}")
         for d in verdict.details:
             console.print(f"    [red]-[/red] {d}")
     console.print(
-        f"[dim]run {result.run_id} · steps {m['steps']} · tokens {m['total_tokens']} "
+        f"[dim]run {result.run_id} · llm={llm} · steps {m['steps']} · tokens {m['total_tokens']} "
         f"(${m['est_cost_usd']:.6f}) · {m['latency_ms']:.0f}ms · "
         f"neatlogs {'active' if result.neatlogs_active else 'off'}[/dim]"
     )

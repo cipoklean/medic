@@ -1,30 +1,44 @@
-"""Run the patient agent once, under a given config, and record everything.
+"""One entry point for running the patient, for every caller.
 
-One entry point for every caller — cli.py run, verify.py, and the bug-2
-recovery probe — so a number reported in one place is produced the same way
-everywhere else.
+The LLM mode is explicit, never inferred, because the honest answer to "was
+this run scripted or real?" has to be a fact rather than a guess:
+
+  mode="scripted" (default) -> patient/scripted.py, deterministic, offline.
+                               Reproducible; the backbone of tests and the
+                               backup demo.
+  mode="real"               -> the OpenAI-compatible client from env
+                               (LLM_BASE_URL / LLM_API_KEY / LLM_MODEL), which
+                               covers Bedrock, OpenRouter, NaraRouter and
+                               OpenAI by changing one variable.
+
+Medic's own diagnose/surgeon steps ALWAYS use the real LLM — a scripted model
+diagnosing a scripted patient would be grading its own homework. Only the
+patient may be scripted, and only when asked.
 """
 from __future__ import annotations
 
-from typing import Callable
+from typing import Callable, Literal
 
 from patient.agent import PatientAgent, RunResult, Step
-from patient.config import llm_configured
+from patient.config import llm_configured, llm_settings
 from patient.scripted import ScriptedLLM
 from patient.tracing import Recorder
 
+LLMMode = Literal["scripted", "real"]
 
-def build_llm(config: dict):
-    """Real client when credentials exist, deterministic scripted one otherwise.
+DEFAULT_MODE: LLMMode = "scripted"
 
-    The scripted client is given the SAME config the agent gets, so it behaves
-    the way that configuration tells it to behave — the offline run is a real
-    run of a literal agent, not a canned answer.
-    """
-    if llm_configured():
+
+def build_llm(config: dict, mode: LLMMode = DEFAULT_MODE):
+    """Real client when asked and available, deterministic one otherwise."""
+    if mode == "real":
+        if not llm_configured():
+            raise RuntimeError(
+                "--llm real needs LLM_BASE_URL, LLM_API_KEY and LLM_MODEL in .env "
+                "(see .env.example). Bedrock: point LLM_BASE_URL at "
+                "https://bedrock-runtime.<region>.amazonaws.com/openai/v1"
+            )
         from openai import OpenAI
-
-        from patient.config import llm_settings
 
         s = llm_settings()
         return OpenAI(api_key=s["api_key"], base_url=s["base_url"])
@@ -36,8 +50,9 @@ def run_once(
     recorder: Recorder,
     config: dict,
     on_step: Callable[[Step], None] | None = None,
+    mode: LLMMode = DEFAULT_MODE,
 ) -> RunResult:
-    agent = PatientAgent(config, llm=build_llm(config), on_step=on_step)
+    agent = PatientAgent(config, llm=build_llm(config, mode), on_step=on_step)
     return agent.run(question, recorder)
 
 
