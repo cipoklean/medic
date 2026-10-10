@@ -139,9 +139,13 @@ Assumptions, stated so they can be challenged:
 * Hosting and storage of traces and reports: assumed $0.50/team/month.
 * Gross margin ≈ **98.6%** at $49/mo.
 
-At the measured cost, inference is **under 1% of revenue** at every tier. That is
-the single most important number in this document: the product is verification
-and history, not tokens.
+At the measured cost, inference is **under 1% of revenue** at every tier, giving
+**~98.6% gross margin** — the single most important number in this document. The
+product is verification and history, not tokens.
+
+**Caveat on the medic-model dial below:** only `claude-sonnet-4.6` has ever served
+a Medic call. The cheaper rows are rate-card arithmetic, not results, and nobody
+has yet verified that a smaller model diagnoses as accurately.
 
 The cost structure is unusually favourable: **the expensive part of the product
 is verification (running train + held-out tasks), not model inference.** That is

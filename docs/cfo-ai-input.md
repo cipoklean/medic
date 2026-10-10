@@ -51,17 +51,22 @@ gateway's own `/model/info` endpoint (`evidence/gateway_pricing.json`).
 **Measured, not estimated.** This covers train + four held-out tasks + clean
 control — the full verification, not just the suggestion.
 
-### The medic model is a cost dial — MEASURED
+### The medic model is a cost dial — PRICED, not yet run
 
-| Medic model | Cost/heal (medic share) |
-|---|---|
-| claude-sonnet-4.6 | $0.007511 |
-| claude-haiku | $0.002653 |
-| nova-micro | $0.000074 |
+| Medic model | Cost/heal (medic share) | Has it actually healed anything? |
+|---|---|---|
+| claude-sonnet-4.6 | **$0.007511** | **Yes — the measured heal in this sheet** |
+| claude-haiku | $0.002653 | No |
+| nova-micro | $0.000074 | No |
 
-A **107× spread** between the cheapest and most expensive. This is what makes
-tiered pricing possible: auto-heal on the cheap model, escalate to Sonnet on low
-diagnostic confidence.
+**Only Sonnet has ever served a Medic call.** The rows below it are arithmetic on
+the gateway's rate card, not results: nobody has yet checked whether a cheaper
+model diagnoses as accurately. The 107× spread is therefore a *price ratio*, and
+it is the reason a cheaper tier is worth testing — not evidence that one works.
+
+The open question a pilot should answer: **does claude-haiku hold 0.95 confidence
+on the same trace?** If yes, the medic cost falls to $0.0027 and tiered
+auto-healing becomes real rather than theoretical.
 
 ### Monthly fixed costs
 
@@ -85,10 +90,14 @@ Inference is **$0.009426/heal measured**. Allocations below are assumptions.
 | Hosted, $49/mo for 20 | $49 | $0.188 inference (20 × $0.0094) + $0.50 hosting | **~98.6%** |
 | Team, $99/seat/mo | $99 | $0.0094/heal × assumed 20 heals + $0.50 | **~98%** |
 
-**The cost structure is the business case:** inference is **under 1% of revenue**
-at every tier. The product is verification and history, not tokens. A competitor
-can copy the suggestion step; copying the verification harness means re-deriving
-every hard check, and every check is bug-specific.
+**This is the headline number: gross margin ≈ 98.6%, measured.** Inference is
+**under 1% of revenue** at every tier, from a heal that was actually run end to
+end — not modelled.
+
+**The cost structure is the business case:** the product is verification and
+history, not tokens. A competitor can copy the suggestion step; copying the
+verification harness means re-deriving every hard check, and every check is
+bug-specific.
 
 *Note:* these margins assume Medic's inference is billed to us. On the Team tier
 a customer may supply their own keys, which raises margin further — ASSUMPTION,
@@ -178,3 +187,8 @@ Stated plainly, because a plan that cannot fail is not a plan.
 **Every ASSUMPTION in this sheet is labelled.** The measured core is small and
 hard: one heal, its cost, its accuracy, and its verification. Everything about
 customers, conversion and burn is assumption and should be challenged as such.
+
+**One further distinction worth stating:** the cost dial in §3 is priced, not
+proven. Sonnet is the only model that has served a Medic call; haiku and
+nova-micro are rate-card arithmetic. A plan that presents a price as a result is
+the same error this project keeps catching in its own tests.
