@@ -94,7 +94,13 @@ class ScriptedLLM:
         # ── read the config the way a literal model would ──
         self.stop_rule_present = not lacks_stop_rule(prompt)
         self.emit_prose = is_vague(calc_desc)
-        self.cite_without_evidence = "cite what you know" in prompt.lower()
+        # Obey the FETCHED-ONLY rule when it is present, not just when the
+        # permissive wording is absent: a real model reads the whole prompt.
+        low = prompt.lower()
+        self.cite_without_evidence = (
+            "cite what you know" in low
+            and "only urls you actually fetched" not in low
+        )
         self.retry_allowed = bool(self.config.get("retry_on_parse_error", False))
 
         # A prompt without a stop rule has no reason to stop after one answer.

@@ -207,16 +207,32 @@ def heal(
     bug: str = typer.Option(None, "--bug"),
     trace: str = typer.Option(None, "--trace"),
     apply: bool = typer.Option(False, "--apply", help="write the patch to medic.yaml"),
+    llm: str = typer.Option("scripted", "--llm", help="scripted (deterministic) or real"),
+    attempts: int = typer.Option(3, "--attempts"),
 ) -> None:
-    """Full loop: diagnose -> diff -> rerun -> heldout -> verdict. (Phase 3)"""
-    from medic.loop import heal as run_heal
+    """Full loop: diagnose -> diff -> rerun -> heldout -> verdict."""
+    from medic.ui import run_heal_ui
+
+    if llm not in ("scripted", "real"):
+        _fail(f"--llm must be 'scripted' or 'real', got {llm!r}")
+        raise typer.Exit(1)
+    if not bug:
+        _fail("pass --bug (a bare --trace cannot be verified without a hard check)")
+        raise typer.Exit(1)
 
     try:
-        ok = run_heal(bug=bug, trace_id=trace, apply_patch=apply, console=console)
-        raise typer.Exit(0 if ok else 2)
-    except NotImplementedError as exc:
-        _warn(f"heal is not wired yet: {exc}")
+        healed = run_heal_ui(
+            bug=bug,
+            trace_id=trace,
+            apply_patch=apply,
+            mode=llm,
+            max_attempts=attempts,
+            console=console,
+        )
+    except Exception as exc:
+        _fail(f"{type(exc).__name__}: {exc}")
         raise typer.Exit(3)
+    raise typer.Exit(0 if healed else 2)
 
 
 @app.command()
