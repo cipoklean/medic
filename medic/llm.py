@@ -125,10 +125,16 @@ def ask_json(
             return parse_json(content), metrics
         except Exception as exc:
             last_err = exc
+            if _is_daily_limit(exc):
+                # A PER-DAY budget is not a transient condition: retrying in a
+                # loop would just hammer the API for the next 12 minutes.
+                # Say so plainly and stop, so the operator can wait, switch
+                # provider, or raise the tier.
+                raise RuntimeError(_daily_limit_message(exc)) from exc
             if _is_rate_limited(exc):
-                # Groq enforces a tokens-per-minute budget. A heal makes many
+                # Groq enforces a per-MINUTE tokens budget. A heal makes many
                 # calls in a burst (diagnose, surgeon, then verify on train +
-                # every held-out task), so hitting it is routine, not an error.
+                # every held-out task), so hitting this is routine, not fatal.
                 # Retry with the delay the provider states, bounded.
                 wait = _retry_after(exc, attempt)
                 time.sleep(min(wait, 30.0))
@@ -143,6 +149,61 @@ def ask_json(
     raise last_err if last_err else RuntimeError("ask_json failed with no error recorded")
 
 
+def _is_daily_limit(exc: Exception) -> bool:
+    text = str(exc).lower()
+    return "tokens per day" in text or "(tpd)" in text
+
+
+def _parse_go_duration(text: str) -> float | None:
+    """Parse a Go duration such as '12m30.816s' into MINUTES."""
+    import re as _re
+
+    text = text.strip()
+    m = _re.match(r"^(?:(\d+(?:\.\d+)?)h)?(?:(\d+(?:\.\d+)?)m)?(?:(\d+(?:\.\d+)?)s)?$", text)
+    if not m:
+        try:
+            return float(text) / 60.0
+        except ValueError:
+            return None
+    h, mi, sec = (float(g) if g else 0.0 for g in m.groups())
+    return h * 60.0 + mi + sec / 60.0
+
+
+def _daily_limit_message(exc: Exception) -> str:
+    """Turn a raw 429 into an instruction the operator can act on."""
+    import re as _re
+
+    m = _re.search(r"tokens per day \(TPD\): Limit (\d+), Used (\d+)", str(exc))
+    # Greedy on the number, then swallow a Go-style unit: 'try again in 12m30.816s'
+    # otherwise captures just '12' and renders a 12-minute wait as 12 seconds.
+    wait = _re.search(r"try again in ([0-9.]+(?:h\d+m)?(?:m\d+(?:\.\d+)?s)?(?:\d+(?:\.\d+)?s)?)", str(exc))
+    parts = [
+        "PROVIDER DAILY TOKEN BUDGET EXHAUSTED — this is not a transient error.",
+        "Retrying will not help until the daily window resets.",
+    ]
+    if m:
+        limit, used = int(m.group(1)), int(m.group(2))
+        parts.append(f"Limit {limit:,} tokens/day, {used:,} used ({used / limit:.1%}).")
+    if wait:
+        # Groq writes durations like "12m30.816s" or "1.529999999s". A naive
+        # float() on "12m30.816" is a ValueError, and reading only the leading
+        # number turns 12 minutes into 12 seconds — which is the sort of small
+        # wrong number that makes a wait look instantaneous.
+        mins = _parse_go_duration(wait.group(1))
+        if mins is not None:
+            secs = mins * 60.0
+            if secs < 90:
+                parts.append(f"Resets in about {secs:.0f} seconds.")
+            elif mins < 90:
+                parts.append(f"Resets in about {mins:.0f} minutes.")
+            else:
+                parts.append(f"Resets in about {mins / 60:.1f} hours.")
+
+    parts.append("Options: wait for the reset, switch provider via LLM_BASE_URL / "
+                 "LLM_API_KEY, or raise the Groq tier.")
+    return "\n  ".join(parts)
+
+
 def _is_rate_limited(exc: Exception) -> bool:
     text = f"{type(exc).__name__}: {exc}".lower()
     return "rate limit" in text or "429" in text or "rate_limit_exceeded" in text
@@ -150,7 +211,10 @@ def _is_rate_limited(exc: Exception) -> bool:
 
 def _retry_after(exc: Exception, attempt: int) -> float:
     """Use the provider's stated delay when it gives one; else exponential."""
-    match = re.search(r"try again in ([0-9.]+)", str(exc))
+    match = re.search(
+        r"try again in ([0-9.]+(?:h\d+m)?(?:m\d+(?:\.\d+)?s)?(?:\d+(?:\.\d+)?s)?)",
+        str(exc),
+    )
     if match:
         try:
             return float(match.group(1)) + 0.5
