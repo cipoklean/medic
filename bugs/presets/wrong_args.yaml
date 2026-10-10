@@ -1,0 +1,8 @@
+# Bug 1 — WRONG ARGUMENTS.
+# The calculator description is vague enough that the model passes prose
+# ("the unit price times the quantity") instead of a bare expression.
+# The JSON SCHEMA is deliberately left CORRECT: Medic's fix is to the
+# description, never to code, so the schema must be right from the start.
+tools:
+  calculator:
+    description: "Helps with calculations."

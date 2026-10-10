@@ -50,7 +50,19 @@ def _load_search(query: str) -> dict | None:
 
 
 def _load_page(url: str) -> str | None:
-    name = _slug(url.rstrip("/").split("//")[-1])
+    """Map a URL to fixtures/pages/<name>.{html,txt}.
+
+    Only the URL's LAST PATH SEGMENT is used: the fixture name follows the
+    page, not the host. Slugging the whole URL (`https://example.com/widget-price`
+    -> `example_com_widget_price`) makes every fixture unreachable while
+    looking perfectly correct — the agent then quietly answers "unknown amount"
+    instead of erroring, which is how a broken loader hides for hours.
+    """
+    path_part = url.split("//")[-1]
+    last_segment = path_part.rstrip("/").split("/")[-1]
+    name = _slug(last_segment)
+    if not name:
+        return None
     for ext in (".html", ".txt"):
         path = PAGES_DIR / f"{name}{ext}"
         if path.exists():
@@ -166,22 +178,24 @@ def calculator(expression: str) -> dict:
     return {"expression": expression, "result": value}
 
 
-class _BrokenJson:
+class _BrokenJson(str):
     """A string that claims to be JSON but is not.
 
     Bug 2 needs a tool that returns malformed output so the agent's parse
-    blows up. Returning a plain str keeps the tool signature honest — the
-    agent must json.loads() its output, and that is exactly where it fails.
+    blows up. It MUST subclass `str`: the agent guards tool output with
+    `isinstance(step.output, str)`, and a plain object with only `__str__`
+    slips past that guard, gets re-serialised as a JSON *string* literal, and
+    the bug disappears — the exact failure this module exists to produce.
+
+    Returning a plain str also keeps the tool signature honest: the agent must
+    json.loads() its output, and that is precisely where it fails.
     """
 
-    def __init__(self, text: str):
-        self._text = text
+    def __new__(cls, text: str):
+        return super().__new__(cls, text)
 
     def __repr__(self) -> str:
-        return self._text
-
-    def __str__(self) -> str:
-        return self._text
+        return str.__str__(self)
 
 
 def set_broken_json(enabled: bool) -> None:

@@ -1,0 +1,36 @@
+id: loop-widgets
+bug: loop
+question: >-
+  ACME Corp ordered 250 standard widgets. What is the total cost after the
+  volume discount? Use the calculator and give me the final number.
+expected_answer: 28248.0   # 250 x 128.40 = 32,100.00, less 12% = 28,248.00
+max_steps_allowed: 8
+
+---
+id: wrong-args-gadgets
+bug: wrong_args
+question: >-
+  How much do two blue gadgets from Gadget Hub cost in total? Use the
+  calculator and give me the final number.
+expected_answer: 159.98
+max_steps_allowed: 8
+
+---
+id: parse-error-solar
+bug: parse_error
+question: >-
+  An installer quoted four Helio H200 solar panels with mounting hardware for a
+  total. Using the panel list price, what is that total? Use the calculator and
+  give me the final number.
+expected_answer: 5000.0
+max_steps_allowed: 8
+
+---
+id: hallucinated-citation-servers
+bug: hallucinated_citation
+question: >-
+  What is the monthly cost of three Orbit Compute Basic servers? Use the
+  calculator, cite your source with its URL, and give me the final number.
+expected_answer: 1350.0
+max_steps_allowed: 8
+check: citations_must_be_fetched

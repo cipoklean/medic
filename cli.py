@@ -120,45 +120,58 @@ def run(bug: str = typer.Option(..., "--bug", help=f"one of: {', '.join(BUGS)}")
     """Inject a bug, run the patient on its train task, show the hard check."""
     from bugs.inject import apply_bug, reset_bug
     from checks.checks import run_checks
+    from medic.runner import measured, run_once
     from tasks.loader import train_task_for
+    from patient.tracing import new_run
 
     if bug not in BUGS:
         _fail(f"unknown bug {bug!r}; pick one of {', '.join(BUGS)}")
         raise typer.Exit(1)
 
     reset_bug(bug)
-    apply_bug(bug)
+    config = apply_bug(bug)
     _ok(f"injected bug: {bug}")
 
     task = train_task_for(bug)
     if task is None:
-        _fail(f"no train task for bug {bug} (Phase 2 has not built it yet)")
+        _fail(f"no train task for bug {bug}")
         raise typer.Exit(1)
 
-    from patient.agent import PatientAgent, load_config
-    from patient.scripted import ScriptedLLM
-    from patient.tracing import new_run
-
+    console.print(f"[dim]task {task['id']}: {task['question'].strip()[:90]}…[/dim]")
     recorder = new_run("patient-agent", tags=[f"bug={bug}", "phase=run"])
-    live = llm_configured()
-    llm = None if live else ScriptedLLM()
-    agent = PatientAgent(load_config(), llm=llm, on_step=lambda s: console.print(
-        f"  [cyan]step {s.index}[/cyan] {s.tool_name} {json.dumps(s.args)[:90]}"
-        + (f" [red]ERR {s.error}[/red]" if s.error else "")
-    ))
-    result = agent.run(task["question"], recorder)
-    recorder.write({"result": result.to_dict(), "bug": bug})
+
+    def _show(step) -> None:
+        try:
+            console.print(
+                f"  [cyan]step {step.index}[/cyan] {step.tool_name} {str(step.args)[:80]}"
+                + (f" [red]ERR {step.error[:60]}[/red]" if step.error else "")
+            )
+        except Exception as exc:
+            console.print(f"  [yellow]step {step.index} {step.tool_name} (render error: {exc})[/yellow]")
+
+    try:
+        result = run_once(task["question"], recorder, config, on_step=_show)
+    except Exception as exc:
+        _fail(f"the agent raised {type(exc).__name__}: {exc}")
+        raise typer.Exit(3)
+
+    recorder.write({"result": result.to_dict(), "bug": bug, "task_id": task["id"]})
 
     verdict = run_checks(bug, task, result)
+    m = measured(result, recorder)
+
     console.print()
     if verdict.passed:
-        _ok(f"check PASSED (steps={len(result.steps)}, tokens={result.prompt_tokens + result.completion_tokens})")
+        _ok(f"check PASSED — {verdict.reason}")
     else:
-        _fail(f"check FAILED: {verdict.reason}")
+        _fail(f"check FAILED [{verdict.failure_type or 'unknown'}]: {verdict.reason}")
         for d in verdict.details:
             console.print(f"    [red]-[/red] {d}")
-    console.print(f"[dim]run {result.run_id} · local trace {recorder.run_id}.json · "
-                  f"neatlogs {'active' if result.neatlogs_active else 'off'}[/dim]")
+    console.print(
+        f"[dim]run {result.run_id} · steps {m['steps']} · tokens {m['total_tokens']} "
+        f"(${m['est_cost_usd']:.6f}) · {m['latency_ms']:.0f}ms · "
+        f"neatlogs {'active' if result.neatlogs_active else 'off'}[/dim]"
+    )
     raise typer.Exit(0 if verdict.passed else 2)
 
 
