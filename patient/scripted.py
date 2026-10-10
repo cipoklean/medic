@@ -322,6 +322,11 @@ class ScriptedLLM:
             ("solar", "helio panel price", "widget price"),
             ("unit", "widget price", "blue gadget price"),
             ("widget", "widget price", "acme widget order"),
+            ("vertex", "vertex storage", "widget price"),
+            ("storage fleet", "vertex storage", "orbit server price"),
+            ("kestrel", "kestrel freight", "orbit server price"),
+            ("pallet", "kestrel freight", "orbit server price"),
+            ("rotterdam", "kestrel freight", "orbit server price"),
         ]
         for key, first, second in ordered:
             if key in text:
@@ -389,6 +394,10 @@ def expression_for_question(text: str) -> str | None:
         return "128.40*100"
     if "two blue" in low:
         return "79.99*2"
+    if "vertex" in low or "storage fleet" in low:
+        return "86.25*7"
+    if "kestrel" in low or "pallet" in low or "rotterdam" in low:
+        return "318.40*12"
     return None
 
 

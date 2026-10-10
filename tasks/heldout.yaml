@@ -95,3 +95,33 @@ expect:
   unit: '128.40'
   qty: '1'
   expr: Decimal(unit)*Decimal(qty)
+
+---
+id: parse-error-vertex
+bug: parse_error
+question: >-
+  Our team is provisioning seven units on the Vertex Storage Fleet plan. What is
+  the total monthly cost? Fetch the pricing page, use the calculator, and give me
+  the final number.
+expected_answer: 603.75
+max_steps_allowed: 8
+expect:
+  from: vertex_storage.html
+  unit: '86.25'
+  qty: '7'
+  expr: Decimal(unit)*Decimal(qty)
+
+---
+id: parse-error-kestrel
+bug: parse_error
+question: >-
+  We are shipping a consolidated consignment to Rotterdam on the Kestrel Freight
+  lane, and it comes to twelve pallets. What is the total freight cost? Fetch the
+  lane rate page, use the calculator, and give me the final number.
+expected_answer: 3820.80
+max_steps_allowed: 8
+expect:
+  from: kestrel_freight.html
+  unit: '318.40'
+  qty: '12'
+  expr: Decimal(unit)*Decimal(qty)

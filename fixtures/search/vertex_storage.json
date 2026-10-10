@@ -1,0 +1,10 @@
+{
+  "query": "vertex storage fleet pricing",
+  "results": [
+    {
+      "title": "Vertex Storage — Fleet plan pricing",
+      "url": "https://example.com/vertex-storage",
+      "snippet": "Per-unit monthly list rate for the Vertex Storage Fleet plan, including the minimum commitment threshold."
+    }
+  ]
+}
