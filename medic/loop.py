@@ -42,6 +42,7 @@ class Attempt:
     refused: str | None = None
     error: str | None = None
     llm_metrics: dict = field(default_factory=dict)
+    medic_metrics: dict = field(default_factory=dict)
 
     def to_dict(self) -> dict:
         return {
@@ -51,6 +52,7 @@ class Attempt:
             "refused": self.refused,
             "error": self.error,
             "llm": self.llm_metrics,
+            "medic_run": self.medic_metrics,
             "verify": self.verify,
         }
 
@@ -75,6 +77,15 @@ class HealResult:
 
 def _write(config: dict) -> None:
     MEDIC_YAML.write_text(yaml.safe_dump(config, sort_keys=False, allow_unicode=True))
+
+
+def _medic_recorder(bug: str, attempt: int) -> Recorder:
+    """Medic's OWN calls get their own trace, separate from the patient's.
+
+    Without this, diagnose and surgeon emit no spans at all and the cost of the
+    repair is invisible - which is the one number a reader most wants.
+    """
+    return new_run("medic", tags=[f"bug={bug}", f"step=attempt{attempt}", f"llm={mode}"])
 
 
 def _reproduce(bug: str, config: dict, mode: LLMMode):
@@ -137,6 +148,7 @@ def heal(
     for attempt_no in range(1, max_attempts + 1):
         emit("attempt_start", {"attempt": attempt_no})
         att = Attempt(number=attempt_no)
+        med_rec = _medic_recorder(bug, attempt_no)
 
         trace: Trace | None = load_trace(trace_id or tid)
         if trace is None:
@@ -147,13 +159,14 @@ def heal(
 
         # ── diagnose ──
         try:
-            diag, usage = diag_mod.diagnose(trace, verdict, config)
+            diag, usage = diag_mod.diagnose(trace, verdict, config, med_rec)
             att.diagnosis = diag.to_dict()
             att.llm_metrics = usage
             emit("diagnosis", {"attempt": attempt_no, "diagnosis": diag.to_dict()})
         except Exception as exc:
             att.error = f"diagnose failed: {type(exc).__name__}: {exc}"
             out.attempts.append(att)
+            med_rec.write({"attempt": attempt_no, "bug": bug, "error": att.error})
             emit("attempt_end", {"attempt": att})
             # Surface WHY. A "needs a human" verdict that actually means
             # "the API key is missing" wastes demo time and hides a blocker.
@@ -162,7 +175,7 @@ def heal(
 
         # ── patch ──
         try:
-            patch, _ = surg_mod.propose(diag, config, verdict)
+            patch, _ = surg_mod.propose(diag, config, verdict, med_rec)
             att.patch = {"field": patch.field, "new_value": patch.new_value,
                          "rationale": patch.rationale}
         except Exception as exc:
@@ -189,6 +202,22 @@ def heal(
         att.verify = vr.to_dict()
         emit("verify", {"attempt": attempt_no, "verify": vr.to_dict()})
         out.attempts.append(att)
+        med_metrics = med_rec.metrics()
+        med_rec.write({"attempt": attempt_no, "bug": bug, "metrics": med_metrics,
+                       "diagnosis": att.diagnosis, "patch": att.patch})
+        emit("medic_run", {"run_id": med_rec.run_id,
+                           "neatlogs_trace_id": med_rec.neatlogs_trace_id,
+                           "provider": mode, "metrics": med_metrics})
+        att.medic_metrics = {
+            "run_id": med_rec.run_id,
+            "provider": f"{mode}",
+            "neatlogs_trace_id": med_rec.neatlogs_trace_id,
+            "total_tokens": med_metrics["total_tokens"],
+            "prompt_tokens": med_metrics["prompt_tokens"],
+            "completion_tokens": med_metrics["completion_tokens"],
+            "spans": med_metrics["spans"],
+            "cost_note": "Medic's own diagnose + surgeon calls, measured",
+        }
 
         if vr.all_passed:
             config = patched

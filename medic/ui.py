@@ -183,6 +183,21 @@ def run_heal_ui(
             _diff_panel(console, payload.get("diff") or "", payload.get("patch"))
         elif event == "verify":
             _verify_table(console, payload["verify"])
+        elif event == "medic_run":
+            m = payload.get("metrics") or {}
+            body = Text()
+            body.append("Medic's own calls — diagnose + surgeon\n", style="bold white")
+            body.append(f"  tokens {m.get('total_tokens', '?')}", style="white")
+            body.append(f"  (prompt {m.get('prompt_tokens', '?')} / "
+                        f"completion {m.get('completion_tokens', '?')})\n", style="dim")
+            body.append(f"  spans {m.get('spans', '?')} · run {payload.get('run_id', '?')}\n",
+                        style="dim cyan")
+            tid = payload.get("neatlogs_trace_id")
+            if tid:
+                body.append(f"  https://app.neatlogs.com/traces/{tid}\n", style="dim cyan")
+            body.append(f"  provider {payload.get('provider', '?')}", style="dim magenta")
+            console.print(Panel(body, border_style="magenta",
+                                title="[bold magenta]medic trace (workflow_name=medic)[/bold magenta]"))
         elif event == "healed":
             console.print(
                 Panel(

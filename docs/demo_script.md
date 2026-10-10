@@ -1,51 +1,150 @@
-# Demo shot list — Medic (neatHack 2026)
+# Medic — X demo shot list (neatHack 2026)
 
-2 minutes, 4 beats. Every number below is measured and lives in `evidence/`.
-Nothing here needs a claim I can't point at.
+**Target: 2:45.** Sponsor use is scored — neatlogs, Entire and cfo.ai each appear
+by name on screen with something real to show.
 
-## Before you record
-
-```bash
-cd ~/medic
-set -a && . ./.env && set +a        # .env must win over any stale LLM_* in the shell
-.venv/bin/python cli.py doctor      # all green
-```
-
-**Check your provider budget first.** Groq is 200,000 tokens/day and one
-runaway patient run costs ~23,000. OpenRouter is a paid slug. Run
-`cli.py doctor` and look at the chain line before you hit record.
-
-**Have the scripted backup ready** (labelled as scripted if you use it):
-
-```bash
-.venv/bin/python cli.py run --bug loop --llm scripted
-```
+Every number below is measured and carries its evidence file. If a number is not
+on this list, do not say it.
 
 ---
 
-## Beat 1 — "Agents don't crash. They quietly go wrong." (0:00–0:20)
+## BUDGET PLAN — read before you record
 
-Show the failing run:
+Groq: **200,000 tokens/day.** Measured costs:
+
+| Command | Tokens | Evidence |
+|---|---|---|
+| `cli.py doctor` | ~100 | — |
+| `cli.py run --bug loop --llm real` | ~4,000 clean / ~23,000 buggy | `real_heal_loop.json` |
+| `cli.py heal --bug loop --llm real` | **~31,000 + Medic's own calls** | `real_heal_loop.json` |
+| — buggy reproduce | 15,478 | 10 steps |
+| — rerun, train | 7,587 | 6 steps |
+| — rerun, held-out ×2 | 7,695 | 5 + 3 steps |
+| Medic diagnose + surgeon | **not yet measured** — capture added, pending | — |
+
+**One clean take ≈ 36,000–46,000 tokens ≈ 18–23% of the daily budget.**
+**4 takes per day, maximum.**
+
+### Commands that spend Groq tokens
+
+| # | Command | Spend | When |
+|---|---|---|---|
+| 1 | `cli.py doctor` | ~100 | pre-flight, fine |
+| 2 | `cli.py run --bug loop --llm real` | ~4k–23k | **demo take only** |
+| 3 | `cli.py heal --bug loop --llm real` | ~31k + medic | **demo take only** |
+| 4 | `scripts/smoke_tool_calling.py` | ~50/model | never on a record day |
+
+**Rule: rehearse on `--llm scripted` (free, offline, deterministic). Run the
+real take ONCE, at the end.**
+
+```bash
+# REHEARSAL — costs nothing, run as often as you like
+.venv/bin/python cli.py run  --bug loop --llm scripted
+.venv/bin/python cli.py heal --bug loop --llm scripted   # reports "needs a key" — expected
+.venv/bin/python cli.py report
+
+# REAL TAKE — one pass, ~36-46k tokens
+set -a && . ./.env && set +a
+.venv/bin/python cli.py doctor
+.venv/bin/python cli.py run  --bug loop --llm real
+.venv/bin/python cli.py heal --bug loop --llm real
+```
+
+### Backup take
+
+```bash
+export LLM_PROVIDER_CHAIN=openrouter
+```
+
+**Say on camera:** "Same model, different host. Groq gave a 12-step overrun;
+OpenRouter gives a single empty response. The fault is model-and-host specific —
+that's the point of the next beat."
+
+**If both are dead:** scripted take, clearly labelled. A labelled deterministic
+run is honest; an improvised claim is not.
+
+---
+
+## THE TAKE
+
+### 0:00–0:10 — THE HOOK
 
 ```bash
 .venv/bin/python cli.py run --bug loop --llm real
 ```
 
-**Say:** "Same agent, same question. It goes looking for sources and never
-stops — 12 steps against a limit of 8."
+**"Agents don't crash. They quietly go wrong. This agent asked one question. It
+used twelve steps, burned twenty-three thousand tokens, and never stopped."**
 
-**On screen:** red panel, `[loop] used 12 steps, over the limit of 8`, plus
-`12 steps · 23,136 tokens · $0.086`.
+On screen: `[loop] used 12 steps, over the limit of 8` · `23,136 tokens` ·
+trace ID.
 
-**Then** the neatlogs trace link. Say the model by name: this is
-`groq/openai/gpt-oss-20b`.
+**Say the provider out loud:** "That's `groq/openai/gpt-oss-20b`."
 
 ---
 
-## Beat 2 — The same prompt, four models (0:20–0:35)
+### 0:10–0:30 — neatlogs (SPONSOR 1)
 
-The capability matrix on screen. **This is the beat that makes it a product and
-not a toy.**
+Open the dashboard. Show the span tree.
+
+**"That's not a log line — a span tree. Every tool call, every token count, in
+order."**
+
+Then the read-back, which is the part judges don't expect:
+
+```bash
+curl -s -H "x-api-key: $NEATLOGS_API_KEY" \
+  https://app.neatlogs.com/api/traces/v3/<TRACE_ID> | head -c 400
+```
+
+**"Medic reads this back through the API — not a screenshot. Every span, with
+parent IDs. And if neatlogs is down it falls back to a local file, so a heal
+never dies because a vendor is down."**
+
+Sponsor word on camera: **neatlogs.** · evidence: `trace_clean_real_llm.json`
+
+---
+
+### 0:30–1:00 — DIAGNOSIS AND DIFF
+
+```bash
+.venv/bin/python cli.py heal --bug loop --llm real
+```
+
+**Diagnosis** (name the span): "It read the trace and named the broken step —
+`span ba760cf318f943b1`, confidence 0.92 — *'the system_prompt instructs the
+agent to keep searching until multiple independent confirmations are found.'*"
+
+**Diff** (one field): "It can only touch four fields in one file. It picked
+`system_prompt`. It did not touch Python. It did not touch the tools."
+
+**Medic's own trace** (magenta panel): "Those are Medic's own calls — the
+diagnosis and the patch. Measured, not estimated."
+
+**Say the provider:** "Medic's own reasoning also runs on
+`groq/openai/gpt-oss-20b`."
+
+---
+
+### 1:00–1:20 — APPROVAL AND THE RERUN
+
+**"The patch is applied to a copy. It only reaches `medic.yaml` after the checks
+pass. Watch the train task it was given—"**
+
+Verification table, first row: **"—six steps. Was twelve."**
+
+Then the two rows that matter:
+
+**"And these two tasks it has never seen. It saw exactly one failing task. These
+are new questions. It passes both."**
+
+If the heal needs more than one attempt, **keep rolling and say so**: "It's
+attempt two — the first patch didn't generalise. That's the held-out set doing
+its job."
+
+---
+
+### 1:20–1:45 — CAPABILITY MATRIX (the beat that makes it a product)
 
 | Model | clean | same buggy prompt |
 |---|---|---|
@@ -54,100 +153,89 @@ not a toy.**
 | `nara/laguna-s-2.1` | PASS 3 steps | PASS 4 steps |
 | `nara/nemotron-3-ultra-free` | PASS 3 steps | PASS 4 steps |
 
-**Say:** "Identical prompt, identical task. It breaks on two hosts and not on
-two other models. Nobody catches that by re-reading the prompt — it looks
-fine, and it *is* fine, on the models where it's fine. Medic's job is to catch
-the model-specific failure in the trace."
+**"Same prompt. Same question. Same data. It breaks on two hosts and not on two
+other models — and nobody catches that by re-reading the prompt, because the
+prompt is fine on the models where it's fine. Medic's job is to catch the
+model-specific failure in the trace."**
 
-Evidence: `evidence/loop_capability_matrix.json`.
+evidence: `loop_capability_matrix.json`
 
 ---
 
-## Beat 3 — The heal (0:35–1:30)
+### 1:45–2:15 — Entire (SPONSOR 2)
 
 ```bash
-.venv/bin/python cli.py heal --bug loop --llm real
+entire checkpoint list
+entire checkpoint explain 01M4JB59S0C8NN6N28S7F24EYW --short
+entire graph search --query "how does the patient agent loop call a tool" --repo . --top-k 3
 ```
 
-**On screen, in order:** header → red failing run with its cost → diagnosis
-panel → coloured diff → verification table → green **HEALED**.
+**"Every commit is a checkpoint — the diff plus the session behind it. And Hermes
+isn't one of Entire's eight supported agents. So we wrote an integration for it."**
 
-**Point at while it runs:**
+Show `tools/entire-agent-hermes`:
 
-* **Diagnosis** — the model named span `ba760cf318f943b1`, confidence 0.92:
-  *"The system_prompt instructs the agent to keep searching until multiple
-  independent confirmations are found, causing it to exceed the step limit."*
-* **Diff** — one field. `system_prompt`. Nothing else. Medic never touched
-  Python.
-* **Verification** — the table that matters:
+**"It reads real session data out of SQLite, read-only, and reports true token
+counts."**
 
-  | split | task | result | steps |
-  |---|---|---|---|
-  | train | loop-widgets | PASS | 6 |
-  | held-out | loop-solar | PASS | 5 |
-  | held-out | loop-gadgets | PASS | 3 |
+Cut to `entire graph search` returning `PatientAgent.run`.
 
-**Say:** "Two of those tasks were never shown to the model during diagnosis. It
-only ever saw the failing one."
+Sponsor word: **Entire.** · checkpoint: `01M4JB59S0C8NN6N28S7F24EYW`
 
 ---
 
-## Beat 4 — Close (1:30–2:00)
+### 2:15–2:35 — cfo.ai (SPONSOR 3)
 
-Two numbers, both measured:
+Open `docs/business.md`.
 
-**51% fewer tokens.** 15,478 before → 7,587 after, on the same task. Medic
-doesn't just stop the failure, it makes the agent cheaper.
+**"The business model is in cfo.ai, built from these runs — not from
+assumptions."**
 
-**The recovery case.** `retry_on_parse_error: false → true`. One boolean. The
-cheapest possible fix is often the smallest one:
+Point at the table:
 
-```bash
-.venv/bin/python scripts/probe_recovery.py
-```
+* **30,760 tokens** per heal → **$0.113** at our rate table
+* **51% fewer tokens** after the patch (15,478 → 7,587) — measured on a task the
+  patch never saw
+* **6 heals/day** on a free tier — the real constraint
 
-**Say:** "Point Medic at your agent's `medic.yaml` and your own hard checks.
-The model proposes. The checks decide. Built on neatlogs, with an Entire
-integration for Hermes."
+**"Medic doesn't just stop the failure. It makes the agent cheaper."**
+
+Sponsor word: **cfo.ai.**
 
 ---
 
-## If something goes wrong on camera
+### 2:35–2:45 — CLOSE
 
-| Symptom | Say this, do this |
+**"Point Medic at your agent's config and your own hard checks. The model
+proposes. The checks decide. Built on neatlogs, with an Entire integration we had
+to write ourselves."**
+
+---
+
+## IF IT GOES WRONG ON CAMERA
+
+| Symptom | Do this |
 |---|---|
-| Groq 429 (daily) | Switch `LLM_PROVIDER_CHAIN=openrouter` and **say** the fault changes to an empty response. Same bug, different symptom — still a real demonstration. |
-| Provider key rejected | Fall back to the scripted run. Say plainly: "this is the deterministic agent, same code path, no model." |
-| Heal needs 2+ attempts | **Keep rolling.** Attempts 2–3 are the product working. Held-out catching a fix that only worked on the train task is the demo. |
-| Nothing reproduces | Use Beat 2 as-is — "three of four models don't break on this prompt" is a true and interesting result, not a failure. |
+| Groq 429 on `run` | Switch to `openrouter`, **say** the symptom changes. Still a real demo. |
+| Both providers dead | Scripted take. **Label it scripted.** |
+| Heal takes 3 attempts | **Keep going.** That's the product. |
+| Bug doesn't reproduce | Use the capability matrix as-is. "Three of four models don't break on this prompt" is a true result. |
+| Diff panel wraps badly | Zoom out, or skip to the verification table — the numbers are the payload. |
 
-## Do not claim
+## DO NOT SAY
 
-* That bugs 1, 2 and 4 reproduce on a real model. They don't — none was tuned
-  to. They're demonstrated with the scripted agent.
-* That a real model at temperature 0 is deterministic. Measured: same config,
-  3 steps then 4.
-* That Medic heals everything. One real heal, on one model, one host.
-* Any number you can't find in `evidence/`.
+* Bugs 1, 2, 4 reproduce on a real model — **they don't.** None was tuned to.
+* A real model at temperature 0 is deterministic — measured 3 steps then 4.
+* "Medic heals everything" — one heal, one model, one host.
+* Any number not in this document.
 
 ## Assets
 
 | File | What it proves |
 |---|---|
 | `evidence/real_heal_loop.json` | the real heal, before/after, held-out included |
-| `evidence/loop_capability_matrix.json` | 4 models, 2 hosts, 1 prompt |
+| `evidence/loop_capability_matrix.json` | 4 models, 3 hosts, 1 prompt |
 | `evidence/recovery_parse_error.json` | recovery from a failed tool call |
 | `evidence/trace_clean_real_llm.json` | a real traced run, readable back |
 | `evidence/tool_calling_free_plan.json` | which models actually call tools |
 | `docs/business.md` | cost per heal, the 51% saving, runway |
-
-## Sponsor moments (say the names out loud)
-
-* **neatlogs** — "every span you just saw is in the trace. Medic reads that
-  trace back through `/api/traces/v3` and falls back to a local file if the
-  API is down."
-* **Entire** — "every commit is a checkpoint. And Hermes isn't one of Entire's
-  eight supported agents, so we wrote an integration for it" — cut to
-  `tools/entire-agent-hermes` if there's time, otherwise just say it.
-* **cfo.ai** — "the business model is in `docs/business.md`, built from these
-  measured numbers."

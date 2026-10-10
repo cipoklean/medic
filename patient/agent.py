@@ -136,6 +136,7 @@ class PatientAgent:
         tools = tool_definitions(self.descriptions)
         model = self._model_name()
 
+        empty_retries = 0
         with recorder.span("WORKFLOW", "patient_run", question):
             while True:
                 if len(result.steps) >= self.max_steps:
@@ -177,9 +178,21 @@ class PatientAgent:
                     # reports the true cause.
                     result.answer = msg.content or ""
                     if not result.answer.strip():
+                        # Observed on openrouter/openai/gpt-oss-20b: a turn with
+                        # no content and no tool call. One retry recovers it, and
+                        # a demo should not hinge on a one-off model quirk.
+                        if empty_retries < 1 and len(result.steps) < self.max_steps:
+                            empty_retries += 1
+                            messages.append(
+                                {"role": "user", "content":
+                                 "Your last message was empty. Continue and give "
+                                 "the final answer."}
+                            )
+                            continue
                         result.stopped_because = "empty_response"
                         result.error = (
                             "the model returned neither content nor a tool call"
+                            + (f" (after {empty_retries} retry)" if empty_retries else "")
                         )
                     else:
                         result.stopped_because = "final_answer"

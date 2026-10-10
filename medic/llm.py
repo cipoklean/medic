@@ -32,6 +32,15 @@ def _client():
     from medic import providers as prov
 
     client, provider = prov.build_client()
+    try:
+        import neatlogs
+
+        from patient.tracing import neatlogs_active
+
+        if neatlogs_active():
+            client = neatlogs.wrap(client)
+    except Exception:
+        pass
     return client, provider
 
 
@@ -63,8 +72,11 @@ def ask_json(
     from medic import providers as prov
     from medic.ratelimit import limiter_for
 
-    client, provider = _client()
+    # Trace FIRST: _client() wraps the OpenAI client with neatlogs.wrap(), so
+    # the SDK has to be initialised before the client is built or the wrap is a
+    # no-op and Medic's own calls produce no spans at all.
     ensure_traced()
+    client, provider = _client()
     ceiling = max_tokens or int(os.environ.get("MEDIC_LLM_MAX_TOKENS", "8000"))
 
     # Budget exhaustion doubles the token ceiling; a rate limit just waits.
