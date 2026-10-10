@@ -8,7 +8,7 @@ from __future__ import annotations
 
 from typing import Callable
 
-from patient.agent import PatientAgent
+from patient.agent import PatientAgent, RunResult, Step
 from patient.config import llm_configured
 from patient.scripted import ScriptedLLM
 from patient.tracing import Recorder
@@ -35,8 +35,8 @@ def run_once(
     question: str,
     recorder: Recorder,
     config: dict,
-    on_step: Callable[[object], None] | None = None,
-) -> object:
+    on_step: Callable[[Step], None] | None = None,
+) -> RunResult:
     agent = PatientAgent(config, llm=build_llm(config), on_step=on_step)
     return agent.run(question, recorder)
 

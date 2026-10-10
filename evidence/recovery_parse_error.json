@@ -1,0 +1,76 @@
+{
+  "bug": "parse_error",
+  "task_id": "parse-error-solar",
+  "question": "An installer quoted four Helio H200 solar panels with mounting hardware for a total. Using the panel list price, what is that total? Use the calculator and give me the final number.",
+  "single_config_change": {
+    "field": "retry_on_parse_error",
+    "from": false,
+    "to": true
+  },
+  "before": {
+    "trace_id": "997e3f66c163485a",
+    "check": {
+      "passed": false,
+      "reason": "run ended on an unhandled parse error: JSONDecodeError: Illegal trailing comma before end of object: line 1 column 279 (char 278)",
+      "details": [
+        "no retry was attempted (retry_on_parse_error is false)",
+        "a tool returned unparseable JSON and the agent had no recovery path"
+      ],
+      "failure_type": "parse_error",
+      "metrics": {
+        "steps": 2,
+        "tool_calls": 2
+      }
+    },
+    "metrics": {
+      "run_id": "997e3f66c163485a",
+      "passed_answer": false,
+      "steps": 2,
+      "prompt_tokens": 240,
+      "completion_tokens": 70,
+      "total_tokens": 310,
+      "spans": 5,
+      "errors": 1,
+      "latency_ms": 201.96,
+      "est_cost_usd": 0.00177,
+      "stopped_because": "parse_error",
+      "error": "JSONDecodeError: Illegal trailing comma before end of object: line 1 column 279 (char 278)"
+    },
+    "failed_tool_step": {
+      "index": 2,
+      "tool": "fetch_page",
+      "error": "JSONDecodeError: Illegal trailing comma before end of object: line 1 column 279 (char 278)"
+    }
+  },
+  "after": {
+    "trace_id": "e85e798d8671477a",
+    "check": {
+      "passed": true,
+      "reason": "survived the malformed payload and still answered 5,000.00",
+      "details": [],
+      "failure_type": null,
+      "metrics": {
+        "steps": 3,
+        "tool_calls": 3,
+        "expected": 5000.0,
+        "recovered": false
+      }
+    },
+    "metrics": {
+      "run_id": "e85e798d8671477a",
+      "passed_answer": true,
+      "steps": 3,
+      "prompt_tokens": 480,
+      "completion_tokens": 140,
+      "total_tokens": 620,
+      "spans": 8,
+      "errors": 1,
+      "latency_ms": 0.96,
+      "est_cost_usd": 0.00354,
+      "stopped_because": "final_answer",
+      "error": null
+    },
+    "recovery_observed": true
+  },
+  "recovery_demonstrated": true
+}

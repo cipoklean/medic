@@ -123,7 +123,11 @@ class ScriptedLLM:
         )
         if "not valid JSON" in last_user:
             self.retried_after_parse_error = True
-            return self._call_calculator(self._expression_for_question(messages), prose=False)
+            expr = (
+                expression_for_question(self._question_text(messages))
+                or self.computed_expression
+            )
+            return self._call_calculator(expr, prose=False)
 
         last = next((m for m in reversed(messages) if m.get("role") == "tool"), None)
         if last is None:
@@ -132,12 +136,12 @@ class ScriptedLLM:
         try:
             payload = json.loads(last["content"])
         except json.JSONDecodeError:
-            return self._on_malformed_tool_output()
+            return self._on_malformed_tool_output(messages)
 
         # A tool may return malformed JSON that the agent re-serialised as a
         # plain string. That IS the bug-2 signal, not a crash.
         if isinstance(payload, str):
-            return self._on_malformed_tool_output()
+            return self._on_malformed_tool_output(messages)
 
         if "results" in payload:
             return self._on_search_results(payload, messages)
@@ -153,20 +157,21 @@ class ScriptedLLM:
             return self._on_tool_error(payload)
         return self._final()
 
-    def _on_malformed_tool_output(self):
-        """The tool lied. Retry if the config allows it, else give up."""
+    def _on_malformed_tool_output(self, messages=None):
+        """The tool lied. Retry if the config allows it, else give up.
+
+        The retry must re-derive the expression from the QUESTION. Reusing a
+        remembered expression from another task computes the wrong number, and
+        a recovery that lands on the wrong answer is not a recovery.
+        """
         if self.retry_allowed:
             self.retried_after_parse_error = True
+            expr = (
+                expression_for_question(self._question_text(messages))
+                or self.computed_expression
+            )
             return _resp(
-                _Msg(
-                    tool_calls=[
-                        _Call(
-                            "calculator",
-                            json.dumps({"expression": self.computed_expression or "(128.40*250)*(1-0.12)"}),
-                            self._calls,
-                        )
-                    ]
-                )
+                _Msg(tool_calls=[_Call("calculator", json.dumps({"expression": expr}), self._calls)])
             )
         return _resp(_Msg(content="I could not complete this calculation."))
 
