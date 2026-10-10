@@ -8,42 +8,42 @@
       "runs": [
         {
           "run": 1,
-          "reproduced": false,
-          "failure_type": null,
-          "reason": "survived the malformed payload and still answered 5,000.00",
-          "saw_parse_error": false,
+          "reproduced": true,
+          "failure_type": "parse_error",
+          "reason": "run ended on an unhandled parse error: JSONDecodeError: Illegal trailing comma before end of object: line 1 column 279 (char 278)",
+          "saw_parse_error": true,
           "steps": 2,
-          "total_tokens": 3184,
-          "answer": "The total cost for four Helio H200 solar panels, using the list price of $1,250.00 per panel, is $5,000.00.\n\nCitation:\nhttps://example.com/helio-panels",
-          "run_id": "95fb8f7fa0134350",
+          "total_tokens": 2020,
+          "answer": "",
+          "run_id": "de7c736ad92a4404",
           "neatlogs_trace_id": null
         },
         {
           "run": 2,
-          "reproduced": false,
-          "failure_type": null,
-          "reason": "survived the malformed payload and still answered 5,000.00",
-          "saw_parse_error": false,
+          "reproduced": true,
+          "failure_type": "parse_error",
+          "reason": "run ended on an unhandled parse error: JSONDecodeError: Illegal trailing comma before end of object: line 1 column 279 (char 278)",
+          "saw_parse_error": true,
           "steps": 2,
-          "total_tokens": 3184,
-          "answer": "The total cost for four Helio H200 solar panels, using the list price of $1,250.00 per panel, is $5,000.00.\n\nCitation:\nhttps://example.com/helio-panels",
-          "run_id": "4bb27a4f84544c47",
+          "total_tokens": 2020,
+          "answer": "",
+          "run_id": "5b62be2de8054252",
           "neatlogs_trace_id": null
         },
         {
           "run": 3,
-          "reproduced": false,
-          "failure_type": null,
-          "reason": "survived the malformed payload and still answered 5,000.00",
-          "saw_parse_error": false,
+          "reproduced": true,
+          "failure_type": "parse_error",
+          "reason": "run ended on an unhandled parse error: JSONDecodeError: Illegal trailing comma before end of object: line 1 column 279 (char 278)",
+          "saw_parse_error": true,
           "steps": 2,
-          "total_tokens": 3184,
-          "answer": "The total cost for four Helio H200 solar panels, using the list price of $1,250.00 per panel, is $5,000.00.\n\nCitation:\nhttps://example.com/helio-panels",
-          "run_id": "11fb5377d69f4e87",
+          "total_tokens": 2020,
+          "answer": "",
+          "run_id": "552c022755054247",
           "neatlogs_trace_id": null
         }
       ],
-      "reproductions": 0
+      "reproductions": 3
     },
     "parse-error-gadgets": {
       "split": "heldout",
@@ -57,7 +57,7 @@
           "steps": 1,
           "total_tokens": 1955,
           "answer": "The cost of one case, when the blue gadget and the case are sold together for $169.98 and the blue gadget itself lists at $79.99, is **$89.99**.",
-          "run_id": "c3414ed857db4e5b",
+          "run_id": "a7f2e75ee868437b",
           "neatlogs_trace_id": null
         },
         {
@@ -69,7 +69,7 @@
           "steps": 1,
           "total_tokens": 1955,
           "answer": "The cost of one case, when the blue gadget and the case are sold together for $169.98 and the blue gadget itself lists at $79.99, is **$89.99**.",
-          "run_id": "6137a04b687746e0",
+          "run_id": "06254d5551c74969",
           "neatlogs_trace_id": null
         },
         {
@@ -81,7 +81,7 @@
           "steps": 1,
           "total_tokens": 1955,
           "answer": "The cost of one case, when the blue gadget and the case are sold together for $169.98 and the blue gadget itself lists at $79.99, is **$89.99**.",
-          "run_id": "ddba4c396ef9459c",
+          "run_id": "e3e8934699ae462f",
           "neatlogs_trace_id": null
         }
       ],
@@ -99,7 +99,7 @@
           "steps": 1,
           "total_tokens": 1939,
           "answer": "To convert the price of a unit from dollars to cents, I multiplied the dollar amount by 100. The result is 12,840 cents. Therefore, one unit costs 12,840 cents.",
-          "run_id": "b581df55ba1546f3",
+          "run_id": "b99eee4e6b3b4332",
           "neatlogs_trace_id": null
         },
         {
@@ -111,7 +111,7 @@
           "steps": 1,
           "total_tokens": 1939,
           "answer": "To convert the price of a unit from dollars to cents, I multiplied the dollar amount by 100. The result is 12,840 cents. Therefore, one unit costs 12,840 cents.",
-          "run_id": "6e4a0e275ab14ec6",
+          "run_id": "bc267505453d441a",
           "neatlogs_trace_id": null
         },
         {
@@ -123,14 +123,14 @@
           "steps": 1,
           "total_tokens": 1939,
           "answer": "To convert the price of a unit from dollars to cents, I multiplied the dollar amount by 100. The result is 12,840 cents. Therefore, one unit costs 12,840 cents.",
-          "run_id": "8484c5ba49c44ea0",
+          "run_id": "20f1f4bb35114ae1",
           "neatlogs_trace_id": null
         }
       ],
       "reproductions": 0
     }
   },
-  "total_reproductions": 0,
-  "reproduces": false,
+  "total_reproductions": 3,
+  "reproduces": true,
   "disclosure": "A run counts as reproduced when the hard check fails. saw_parse_error records whether the malformed payload actually surfaced in that run, which separates 'the bug fired' from 'the run failed for another reason'."
 }

@@ -9,31 +9,31 @@
         {
           "run": 1,
           "passed": true,
-          "reason": "answered in 2 steps (limit 8)",
+          "reason": "answered in 3 steps (limit 8)",
           "failure_type": null,
-          "steps": 2,
-          "total_tokens": 3276,
-          "run_id": "814d45bb3bc848ce",
+          "steps": 3,
+          "total_tokens": 4867,
+          "run_id": "372679a194574460",
           "neatlogs_trace_id": null
         },
         {
           "run": 2,
           "passed": true,
-          "reason": "answered in 2 steps (limit 8)",
+          "reason": "answered in 3 steps (limit 8)",
           "failure_type": null,
-          "steps": 2,
-          "total_tokens": 3276,
-          "run_id": "8ab9d0141cf4408a",
+          "steps": 3,
+          "total_tokens": 4867,
+          "run_id": "390e87f34cdb49d6",
           "neatlogs_trace_id": null
         },
         {
           "run": 3,
           "passed": true,
-          "reason": "answered in 2 steps (limit 8)",
+          "reason": "answered in 3 steps (limit 8)",
           "failure_type": null,
-          "steps": 2,
-          "total_tokens": 3276,
-          "run_id": "7ad38a5836eb4b89",
+          "steps": 3,
+          "total_tokens": 4867,
+          "run_id": "7ce5a193eb1f439a",
           "neatlogs_trace_id": null
         }
       ],
@@ -48,8 +48,8 @@
           "reason": "all 3 tool calls schema-valid and answer == 159.98",
           "failure_type": null,
           "steps": 3,
-          "total_tokens": 4685,
-          "run_id": "3843be5d81df49bc",
+          "total_tokens": 4784,
+          "run_id": "c5ae35fb7a0743e2",
           "neatlogs_trace_id": null
         },
         {
@@ -58,8 +58,8 @@
           "reason": "all 3 tool calls schema-valid and answer == 159.98",
           "failure_type": null,
           "steps": 3,
-          "total_tokens": 4685,
-          "run_id": "0b56ff4ecca44489",
+          "total_tokens": 4784,
+          "run_id": "cf31e1f13ca142dd",
           "neatlogs_trace_id": null
         },
         {
@@ -68,8 +68,8 @@
           "reason": "all 3 tool calls schema-valid and answer == 159.98",
           "failure_type": null,
           "steps": 3,
-          "total_tokens": 4685,
-          "run_id": "8e4088be30644198",
+          "total_tokens": 4784,
+          "run_id": "08fcc68dfb95403d",
           "neatlogs_trace_id": null
         }
       ],
@@ -83,9 +83,9 @@
           "passed": true,
           "reason": "survived the malformed payload and still answered 5,000.00",
           "failure_type": null,
-          "steps": 2,
-          "total_tokens": 3184,
-          "run_id": "762a0a99535e41d5",
+          "steps": 3,
+          "total_tokens": 4707,
+          "run_id": "1c85ba0e46044358",
           "neatlogs_trace_id": null
         },
         {
@@ -93,9 +93,9 @@
           "passed": true,
           "reason": "survived the malformed payload and still answered 5,000.00",
           "failure_type": null,
-          "steps": 2,
-          "total_tokens": 3184,
-          "run_id": "5138da9cc8104bf5",
+          "steps": 3,
+          "total_tokens": 4707,
+          "run_id": "eaf5ffa09aae4e33",
           "neatlogs_trace_id": null
         },
         {
@@ -103,9 +103,9 @@
           "passed": true,
           "reason": "survived the malformed payload and still answered 5,000.00",
           "failure_type": null,
-          "steps": 2,
-          "total_tokens": 3184,
-          "run_id": "ece7563241f8450e",
+          "steps": 3,
+          "total_tokens": 4707,
+          "run_id": "d65a0713996a42ae",
           "neatlogs_trace_id": null
         }
       ],
@@ -120,8 +120,8 @@
           "reason": "all 1 cited URL(s) came from fetch_page in this run",
           "failure_type": null,
           "steps": 3,
-          "total_tokens": 4578,
-          "run_id": "3a6b7bc72d4e49da",
+          "total_tokens": 4613,
+          "run_id": "630631f3538b49ce",
           "neatlogs_trace_id": null
         },
         {
@@ -130,8 +130,8 @@
           "reason": "all 1 cited URL(s) came from fetch_page in this run",
           "failure_type": null,
           "steps": 3,
-          "total_tokens": 4578,
-          "run_id": "1c2754fec72c48f2",
+          "total_tokens": 4613,
+          "run_id": "52ab2c7241a140e9",
           "neatlogs_trace_id": null
         },
         {
@@ -140,8 +140,8 @@
           "reason": "all 1 cited URL(s) came from fetch_page in this run",
           "failure_type": null,
           "steps": 3,
-          "total_tokens": 4578,
-          "run_id": "7b38dd7cdfca4ca9",
+          "total_tokens": 4613,
+          "run_id": "867e02efcd314ac4",
           "neatlogs_trace_id": null
         }
       ],
@@ -153,31 +153,31 @@
         {
           "run": 1,
           "passed": true,
-          "reason": "answered in 2 steps (limit 8)",
+          "reason": "answered in 3 steps (limit 8)",
           "failure_type": null,
-          "steps": 2,
-          "total_tokens": 3276,
-          "run_id": "ed4162d99a404823",
+          "steps": 3,
+          "total_tokens": 4867,
+          "run_id": "13ffc1f64db24fc8",
           "neatlogs_trace_id": null
         },
         {
           "run": 2,
           "passed": true,
-          "reason": "answered in 2 steps (limit 8)",
+          "reason": "answered in 3 steps (limit 8)",
           "failure_type": null,
-          "steps": 2,
-          "total_tokens": 3276,
-          "run_id": "80bb7da343144837",
+          "steps": 3,
+          "total_tokens": 4867,
+          "run_id": "528e4dad76254751",
           "neatlogs_trace_id": null
         },
         {
           "run": 3,
           "passed": true,
-          "reason": "answered in 2 steps (limit 8)",
+          "reason": "answered in 3 steps (limit 8)",
           "failure_type": null,
-          "steps": 2,
-          "total_tokens": 3276,
-          "run_id": "45ff8907928b49a8",
+          "steps": 3,
+          "total_tokens": 4867,
+          "run_id": "27d62d9192084351",
           "neatlogs_trace_id": null
         }
       ],
@@ -189,31 +189,31 @@
         {
           "run": 1,
           "passed": true,
-          "reason": "answered in 2 steps (limit 8)",
+          "reason": "answered in 3 steps (limit 8)",
           "failure_type": null,
-          "steps": 2,
-          "total_tokens": 3066,
-          "run_id": "106914ba62714108",
+          "steps": 3,
+          "total_tokens": 4579,
+          "run_id": "4be102b72fff4fbc",
           "neatlogs_trace_id": null
         },
         {
           "run": 2,
           "passed": true,
-          "reason": "answered in 2 steps (limit 8)",
+          "reason": "answered in 3 steps (limit 8)",
           "failure_type": null,
-          "steps": 2,
-          "total_tokens": 3066,
-          "run_id": "6ebf1a30be3a418c",
+          "steps": 3,
+          "total_tokens": 4579,
+          "run_id": "8377040e2bef47b5",
           "neatlogs_trace_id": null
         },
         {
           "run": 3,
           "passed": true,
-          "reason": "answered in 2 steps (limit 8)",
+          "reason": "answered in 3 steps (limit 8)",
           "failure_type": null,
-          "steps": 2,
-          "total_tokens": 3066,
-          "run_id": "9b7b54bc6eae4090",
+          "steps": 3,
+          "total_tokens": 4579,
+          "run_id": "de89884545ac4271",
           "neatlogs_trace_id": null
         }
       ],
@@ -225,31 +225,31 @@
         {
           "run": 1,
           "passed": true,
-          "reason": "answered in 2 steps (limit 8)",
+          "reason": "answered in 3 steps (limit 8)",
           "failure_type": null,
-          "steps": 2,
-          "total_tokens": 3172,
-          "run_id": "ce09637087e845df",
+          "steps": 3,
+          "total_tokens": 4702,
+          "run_id": "32ea8b5da7234644",
           "neatlogs_trace_id": null
         },
         {
           "run": 2,
           "passed": true,
-          "reason": "answered in 2 steps (limit 8)",
+          "reason": "answered in 3 steps (limit 8)",
           "failure_type": null,
-          "steps": 2,
-          "total_tokens": 3172,
-          "run_id": "4690a8f3be2e4660",
+          "steps": 3,
+          "total_tokens": 4702,
+          "run_id": "2da98ca65699452c",
           "neatlogs_trace_id": null
         },
         {
           "run": 3,
           "passed": true,
-          "reason": "answered in 2 steps (limit 8)",
+          "reason": "answered in 3 steps (limit 8)",
           "failure_type": null,
-          "steps": 2,
-          "total_tokens": 3172,
-          "run_id": "136196a601d24277",
+          "steps": 3,
+          "total_tokens": 4702,
+          "run_id": "9391f75fcb3640f0",
           "neatlogs_trace_id": null
         }
       ],
@@ -261,31 +261,31 @@
         {
           "run": 1,
           "passed": true,
-          "reason": "all 2 tool calls schema-valid and answer == 1,350.00",
+          "reason": "all 3 tool calls schema-valid and answer == 1,350.00",
           "failure_type": null,
-          "steps": 2,
-          "total_tokens": 3079,
-          "run_id": "b013004911044a0f",
+          "steps": 3,
+          "total_tokens": 4509,
+          "run_id": "0487a6c9bea2422b",
           "neatlogs_trace_id": null
         },
         {
           "run": 2,
           "passed": true,
-          "reason": "all 2 tool calls schema-valid and answer == 1,350.00",
+          "reason": "all 3 tool calls schema-valid and answer == 1,350.00",
           "failure_type": null,
-          "steps": 2,
-          "total_tokens": 3079,
-          "run_id": "8164674f647c4728",
+          "steps": 3,
+          "total_tokens": 4509,
+          "run_id": "ced4938034b04b32",
           "neatlogs_trace_id": null
         },
         {
           "run": 3,
           "passed": true,
-          "reason": "all 2 tool calls schema-valid and answer == 1,350.00",
+          "reason": "all 3 tool calls schema-valid and answer == 1,350.00",
           "failure_type": null,
-          "steps": 2,
-          "total_tokens": 3079,
-          "run_id": "36f98d7a056a4dd5",
+          "steps": 3,
+          "total_tokens": 4509,
+          "run_id": "75ae0dfe5cca430c",
           "neatlogs_trace_id": null
         }
       ],
@@ -297,31 +297,31 @@
         {
           "run": 1,
           "passed": true,
-          "reason": "all 2 tool calls schema-valid and answer == 32,100.00",
+          "reason": "all 3 tool calls schema-valid and answer == 32,100.00",
           "failure_type": null,
-          "steps": 2,
-          "total_tokens": 3297,
-          "run_id": "e9c71fd3bedf4b9d",
+          "steps": 3,
+          "total_tokens": 4630,
+          "run_id": "e25ee45ad0974f2b",
           "neatlogs_trace_id": null
         },
         {
           "run": 2,
           "passed": true,
-          "reason": "all 2 tool calls schema-valid and answer == 32,100.00",
+          "reason": "all 3 tool calls schema-valid and answer == 32,100.00",
           "failure_type": null,
-          "steps": 2,
-          "total_tokens": 3297,
-          "run_id": "5f6b5a1049594bd4",
+          "steps": 3,
+          "total_tokens": 4630,
+          "run_id": "8da8ae24ba7542f6",
           "neatlogs_trace_id": null
         },
         {
           "run": 3,
           "passed": true,
-          "reason": "all 2 tool calls schema-valid and answer == 32,100.00",
+          "reason": "all 3 tool calls schema-valid and answer == 32,100.00",
           "failure_type": null,
-          "steps": 2,
-          "total_tokens": 3297,
-          "run_id": "0c0e20baf14c4498",
+          "steps": 3,
+          "total_tokens": 4630,
+          "run_id": "09ad326e2d374778",
           "neatlogs_trace_id": null
         }
       ],
@@ -337,7 +337,7 @@
           "failure_type": null,
           "steps": 1,
           "total_tokens": 1955,
-          "run_id": "a061618f85ab4c36",
+          "run_id": "fc782736e21b4754",
           "neatlogs_trace_id": null
         },
         {
@@ -347,7 +347,7 @@
           "failure_type": null,
           "steps": 1,
           "total_tokens": 1955,
-          "run_id": "f3359274b8f640a6",
+          "run_id": "fffd33ccf2eb4d48",
           "neatlogs_trace_id": null
         },
         {
@@ -357,7 +357,7 @@
           "failure_type": null,
           "steps": 1,
           "total_tokens": 1955,
-          "run_id": "057a1647d50f464e",
+          "run_id": "5983b49d3eec4b3f",
           "neatlogs_trace_id": null
         }
       ],
@@ -373,7 +373,7 @@
           "failure_type": null,
           "steps": 1,
           "total_tokens": 1939,
-          "run_id": "338cfd86a66849a0",
+          "run_id": "10d26f3453744138",
           "neatlogs_trace_id": null
         },
         {
@@ -383,7 +383,7 @@
           "failure_type": null,
           "steps": 1,
           "total_tokens": 1939,
-          "run_id": "6f6049c76ea84e32",
+          "run_id": "ab4806240e3f4cc8",
           "neatlogs_trace_id": null
         },
         {
@@ -393,7 +393,7 @@
           "failure_type": null,
           "steps": 1,
           "total_tokens": 1939,
-          "run_id": "3d087e033a234f6f",
+          "run_id": "4154a38c019e41e6",
           "neatlogs_trace_id": null
         }
       ],
@@ -408,8 +408,8 @@
           "reason": "all 1 cited URL(s) came from fetch_page in this run",
           "failure_type": null,
           "steps": 2,
-          "total_tokens": 3277,
-          "run_id": "c23df236e220496a",
+          "total_tokens": 3356,
+          "run_id": "2196a811ba3c45ed",
           "neatlogs_trace_id": null
         },
         {
@@ -418,8 +418,8 @@
           "reason": "all 1 cited URL(s) came from fetch_page in this run",
           "failure_type": null,
           "steps": 2,
-          "total_tokens": 3277,
-          "run_id": "f723f7263d31413e",
+          "total_tokens": 3356,
+          "run_id": "b8ceb3a8fa1049b0",
           "neatlogs_trace_id": null
         },
         {
@@ -428,8 +428,8 @@
           "reason": "all 1 cited URL(s) came from fetch_page in this run",
           "failure_type": null,
           "steps": 2,
-          "total_tokens": 3277,
-          "run_id": "c69d62076f4847da",
+          "total_tokens": 3356,
+          "run_id": "8701c0a2c0bf4b41",
           "neatlogs_trace_id": null
         }
       ],
@@ -444,8 +444,8 @@
           "reason": "all 1 cited URL(s) came from fetch_page in this run",
           "failure_type": null,
           "steps": 2,
-          "total_tokens": 3384,
-          "run_id": "f372f2e2a566468c",
+          "total_tokens": 3303,
+          "run_id": "5f542023ffc8449c",
           "neatlogs_trace_id": null
         },
         {
@@ -454,8 +454,8 @@
           "reason": "all 1 cited URL(s) came from fetch_page in this run",
           "failure_type": null,
           "steps": 2,
-          "total_tokens": 3384,
-          "run_id": "6b1cebe3982e4270",
+          "total_tokens": 3303,
+          "run_id": "6a288b370f2a4f67",
           "neatlogs_trace_id": null
         },
         {
@@ -464,8 +464,8 @@
           "reason": "all 1 cited URL(s) came from fetch_page in this run",
           "failure_type": null,
           "steps": 2,
-          "total_tokens": 3384,
-          "run_id": "4e57b2012b164058",
+          "total_tokens": 3303,
+          "run_id": "a9ed32ab88fb4d5b",
           "neatlogs_trace_id": null
         }
       ],
