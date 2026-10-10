@@ -61,7 +61,7 @@ def _heal_with_deterministic_fix(bug: str, config: dict) -> dict:
     return {"healed": vr.all_passed, "patch": patch, "verify": vr, "diff": surg.diff(config, patched)}
 
 
-def test_trace_local_fallback_always_works() -> list[str]:
+def test_trace_local_fallback_always_works():
     """The product claim: Medic runs even when neatlogs cannot be reached."""
     problems = []
     rec = new_run("test")
@@ -77,10 +77,9 @@ def test_trace_local_fallback_always_works() -> list[str]:
     if not trace.spans:
         problems.append("trace has no spans")
     assert not problems, problems
-    return []
 
 
-def test_deterministic_patch_satisfies_all_checks() -> list[str]:
+def test_deterministic_patch_satisfies_all_checks():
     """A hand-written patch passes train + held-out. No LLM involved."""
     problems = []
     for bug in ("wrong_args", "loop", "parse_error", "hallucinated_citation"):
@@ -103,10 +102,9 @@ def test_deterministic_patch_satisfies_all_checks() -> list[str]:
                 problems.append(f"{bug}: healed with only {held} held-out task(s)")
     reset_bug()
     assert not problems, problems
-    return []
 
 
-def test_patch_allowlist() -> list[str]:
+def test_patch_allowlist():
     """A model must not be able to patch anything but medic.yaml's four fields."""
     problems = []
     bad_field = surg.Patch(field="python_code", new_value="x", rationale="r")
@@ -134,10 +132,9 @@ def test_patch_allowlist() -> list[str]:
     except surg.PatchRefused:
         pass
     assert not problems, problems
-    return []
 
 
-def test_patch_does_not_mutate_and_roundtrips() -> list[str]:
+def test_patch_does_not_mutate_and_roundtrips():
     problems = []
     config = clean_config()
     before = repr(config)
@@ -154,10 +151,9 @@ def test_patch_does_not_mutate_and_roundtrips() -> list[str]:
     except Exception as exc:
         problems.append(f"patched config does not round-trip through YAML: {exc}")
     assert not problems, problems
-    return []
 
 
-def test_clean_config_is_untouched_by_healing() -> list[str]:
+def test_clean_config_is_untouched_by_healing():
     """Healing must never leave medic.yaml worse than it found it."""
     problems = []
     for bug in BUGS:
@@ -170,10 +166,9 @@ def test_clean_config_is_untouched_by_healing() -> list[str]:
     if current_config() != clean_config():
         problems.append("reset_bug did not restore the clean baseline exactly")
     assert not problems, problems
-    return []
 
 
-def test_no_llm_is_used_in_this_path() -> list[str]:
+def test_no_llm_is_used_in_this_path():
     """Guard the distinction this file exists to make.
 
     If someone later routes these tests through the real diagnoser, the output
@@ -202,7 +197,7 @@ def test_no_llm_is_used_in_this_path() -> list[str]:
         problems.append("helper renamed; re-check what this file exercises")
     if "deterministic_patch" not in body:
         problems.append("no longer exercising surgeon.deterministic_patch")
-    return problems
+    assert not problems, problems
 
 
 def source_before_this_guard() -> str:
@@ -224,7 +219,13 @@ def main() -> int:
     for name, fn in tests:
         print(f"→ {name}")
         try:
-            problems = fn()
+            # The tests ASSERT now and return None. An AssertionError IS the
+            # failure report, so it is caught here and turned into a line for
+            # this file's own runner, which does not use pytest.
+            fn()
+            problems = []
+        except AssertionError as exc:
+            problems = [str(exc) or "assertion failed"]
         except Exception as exc:
             problems = [f"the test itself raised {type(exc).__name__}: {exc}"]
         if problems:

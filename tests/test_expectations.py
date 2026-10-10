@@ -79,7 +79,7 @@ def evaluate(expr: str, values: dict[str, Decimal]) -> Decimal:
     return eval(expr, safe_globals)  # noqa: S307, inputs are task files, not user data
 
 
-def test_no_snippet_leaks_an_answer() -> int:
+def test_no_snippet_leaks_an_answer() -> None:
     """No search snippet may contain any task's expected number.
 
     A snippet that carries the answer makes fetch_page optional, and then a bug
@@ -106,15 +106,12 @@ def test_no_snippet_leaks_an_answer() -> int:
                 if val in snippet_nums:
                     leaks.append(f"{path.name}: snippet contains {val} (answer to {tid})")
 
-    if leaks:
-        print("\nSNIPPET LEAKS AN ANSWER:")
-        for l in leaks:
-            print(f"  {l}")
-        print("  A snippet carrying the answer makes fetch_page optional, and a")
-        print("  bug in fetch_page can then never fire.")
-        return 1
+    assert not leaks, (
+        "SNIPPET LEAKS AN ANSWER:\n  " + "\n  ".join(leaks) + "\n"
+        "A snippet carrying the answer makes fetch_page optional, and a bug in "
+        "fetch_page can then never fire."
+    )
     print(f"  no snippet leaks any of the {len(expected)} task answers")
-    return 0
 
 
 def main() -> int:
@@ -158,8 +155,10 @@ def main() -> int:
 
     print()
     print(f"re-derived: {checked}/{len(tasks)}   unverified: {len(unverified)}")
-    if test_no_snippet_leaks_an_answer() != 0:
-        failed.append(("(snippets)", "a search snippet contains a task answer"))
+    try:
+        test_no_snippet_leaks_an_answer()
+    except AssertionError as exc:
+        failed.append(("(snippets)", str(exc)))
     if failed:
         print("\nMISMATCHES, the task expectation disagrees with its own fixtures:")
         for tid, why in failed:
