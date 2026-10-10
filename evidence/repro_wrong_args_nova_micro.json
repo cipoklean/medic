@@ -1,0 +1,49 @@
+{
+  "question": "Does the wrong_args preset reproduce on nova-micro, with the prose-argument signature?",
+  "model": "nova-micro",
+  "preset": "wrong_args (original, unmodified)",
+  "task_id": "wrong-args-gadgets",
+  "expected_answer": 159.98,
+  "runs": [
+    {
+      "run": 1,
+      "reproduced": false,
+      "failure_type": null,
+      "reason": "all 2 tool calls schema-valid and answer == 159.98",
+      "steps": 2,
+      "total_tokens": 3033,
+      "answer": "The total cost of two blue gadgets from Gadget Hub is $159.98. \n\n<https://example.com/blue-gadget>",
+      "prose_argument_calls": [],
+      "run_id": "5decf241652f4f59",
+      "neatlogs_trace_id": null
+    },
+    {
+      "run": 2,
+      "reproduced": false,
+      "failure_type": null,
+      "reason": "all 2 tool calls schema-valid and answer == 159.98",
+      "steps": 2,
+      "total_tokens": 3033,
+      "answer": "The total cost of two blue gadgets from Gadget Hub is $159.98. \n\n<https://example.com/blue-gadget>",
+      "prose_argument_calls": [],
+      "run_id": "1eac9a06c214474b",
+      "neatlogs_trace_id": null
+    },
+    {
+      "run": 3,
+      "reproduced": false,
+      "failure_type": null,
+      "reason": "all 2 tool calls schema-valid and answer == 159.98",
+      "steps": 2,
+      "total_tokens": 3033,
+      "answer": "The total cost of two blue gadgets from Gadget Hub is $159.98. \n\n<https://example.com/blue-gadget>",
+      "prose_argument_calls": [],
+      "run_id": "8b0837e9c09e4443",
+      "neatlogs_trace_id": null
+    }
+  ],
+  "reproductions": 0,
+  "reliable": false,
+  "signature_present": false,
+  "disclosure": "A reproduction counts only when the hard check fails. prose_argument_calls records whether the tool was actually called with prose, which is the signature that distinguishes this bug from a plain wrong answer."
+}
