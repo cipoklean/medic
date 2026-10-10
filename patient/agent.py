@@ -1,9 +1,9 @@
-"""The patient agent — a small tool-calling loop.
+"""The patient agent, a small tool-calling loop.
 
 Everything it is allowed to change lives in medic.yaml. There is no other
 knob: no prompt constants here, no step cap here, no retry policy here. If a
 bug lives in behaviour, its fix must live in that file or it is not fixable by
-Medic — which is the point.
+Medic, which is the point.
 """
 from __future__ import annotations
 
@@ -121,8 +121,8 @@ class PatientAgent:
         Two different limits bind here, and both were found by hitting them:
 
           * unset, OpenRouter reserves the model's full advertised ceiling
-            (65,536) and rejects on insufficient credit — 402.
-          * nova-lite on Bedrock refuses anything above 10,000 — 400
+            (65,536) and rejects on insufficient credit, 402.
+          * nova-lite on Bedrock refuses anything above 10,000 to 400
             'exceeds the model limit of 10000'.
 
         So MEDIC_MAX_TOKENS is a REQUEST, clamped down to the model's own limit
@@ -173,7 +173,7 @@ class PatientAgent:
         return OpenAI(api_key=s["api_key"], base_url=s["base_url"])
 
     def _wrap(self, client):
-        """neatlogs.wrap if available — makes every LLM call a span for free."""
+        """neatlogs.wrap if available, makes every LLM call a span for free."""
         try:
             import neatlogs
 
@@ -320,7 +320,7 @@ class PatientAgent:
                                 )
                             else:
                                 # The bug-2 failure mode: no recovery, no
-                                # clarification — the run must not raise out.
+                                # clarification, the run must not raise out.
                                 result.error = step.error
                                 result.stopped_because = "parse_error"
                                 step.duration_ms = round((time.time() - started) * 1000, 2)
@@ -340,7 +340,7 @@ class PatientAgent:
                             step.output = dispatch(name, step.args)
                             # A tool that returns a string is claiming to be
                             # JSON. If the caller must parse it, it had better
-                            # be parseable — this is where bug 2 surfaces.
+                            # be parseable, this is where bug 2 surfaces.
                             if isinstance(step.output, str):
                                 step.output = json.loads(step.output)
                             tool_span["output"] = step.output

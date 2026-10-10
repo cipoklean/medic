@@ -41,7 +41,7 @@ def main() -> int:
                "https://generativelanguage.googleapis.com/v1beta/openai")
     key = get("LLM_API_KEY_GEMINI")
     if not key:
-        print("LLM_API_KEY_GEMINI is not set — nothing to list.")
+        print("LLM_API_KEY_GEMINI is not set, nothing to list.")
         return 1
 
     # 1. What can this key reach?

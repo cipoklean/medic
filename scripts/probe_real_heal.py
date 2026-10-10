@@ -91,7 +91,7 @@ def main() -> int:
     live = init_tracing()
     print(f"neatlogs active: {live}")
     print("=" * 74)
-    print(f"REAL-LLM HEAL EVIDENCE — bug {bug}")
+    print(f"REAL-LLM HEAL EVIDENCE, bug {bug}")
     print("=" * 74)
 
     print("\n[1/3] baseline (buggy preset, real model)…")
@@ -164,7 +164,7 @@ def main() -> int:
     # that as a heal would be the exact overclaim this project exists to avoid.
     real_heal = bool(outcome.healed and outcome.attempts)
     if outcome.healed and not outcome.attempts:
-        print("\n  NOTE: the baseline PASSED on this model — the bug did not\n"
+        print("\n  NOTE: the baseline PASSED on this model, the bug did not\n"
               "        reproduce, so there was nothing for the LLM to heal.\n"
               "        Recording that, NOT a heal.")
     if not real_heal:

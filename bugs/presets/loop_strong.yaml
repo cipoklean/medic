@@ -1,6 +1,6 @@
-# Bug 3 (STRONG variant) — INFINITE LOOP, strengthened for nara/laguna-s-2.1.
+# Bug 3 (STRONG variant), INFINITE LOOP, strengthened for nara/laguna-s-2.1.
 #
-# WHY THIS FILE EXISTS — read before using it in a demo or a claim.
+# WHY THIS FILE EXISTS, read before using it in a demo or a claim.
 #
 # `loop.yaml` is the ORIGINAL preset and is unchanged. It reproduces the bug on
 # groq/openai/gpt-oss-20b (12 steps against a limit of 8) but NOT on

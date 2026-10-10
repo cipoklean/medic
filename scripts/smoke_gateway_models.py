@@ -126,7 +126,7 @@ def main() -> int:
     base = get("LLM_BASE_URL_LITELLM", "https://litellm.vision.aivar.app/v1")
     key = get("LLM_API_KEY_LITELLM")
     if not key:
-        print("LLM_API_KEY_LITELLM is not set in .env — nothing to probe.")
+        print("LLM_API_KEY_LITELLM is not set in .env, nothing to probe.")
         print("Add it, then re-run. No model is being reported as tested.")
         return 1
 

@@ -73,7 +73,7 @@ def ask_json(
     ~73 of 87 completion tokens thinking on a trivial reply; a large span-tree
     prompt pushes its reasoning well past 1200, and the provider then rejects
     the request with `json_validate_failed: max completion tokens reached
-    before generating a valid document` — an error that looks like a bad prompt
+    before generating a valid document`, an error that looks like a bad prompt
     but is really a truncated budget.
 
     A truncation is retried with a larger budget before giving up, because one
@@ -266,7 +266,7 @@ def _daily_limit_message(exc: Exception) -> str:
     # otherwise captures just '12' and renders a 12-minute wait as 12 seconds.
     wait = _re.search(r"try again in ([0-9.]+(?:h\d+m)?(?:m\d+(?:\.\d+)?s)?(?:\d+(?:\.\d+)?s)?)", str(exc))
     parts = [
-        "PROVIDER DAILY TOKEN BUDGET EXHAUSTED — this is not a transient error.",
+        "PROVIDER DAILY TOKEN BUDGET EXHAUSTED, this is not a transient error.",
         "Retrying will not help until the daily window resets.",
     ]
     if m:
@@ -275,7 +275,7 @@ def _daily_limit_message(exc: Exception) -> str:
     if wait:
         # Groq writes durations like "12m30.816s" or "1.529999999s". A naive
         # float() on "12m30.816" is a ValueError, and reading only the leading
-        # number turns 12 minutes into 12 seconds — which is the sort of small
+        # number turns 12 minutes into 12 seconds, which is the sort of small
         # wrong number that makes a wait look instantaneous.
         mins = _parse_go_duration(wait.group(1))
         if mins is not None:
@@ -321,7 +321,7 @@ def parse_json(text: str) -> dict:
     """Tolerant JSON extraction.
 
     Models wrap JSON in prose or fences even when told not to. Falling back to
-    a regex keeps a whole heal alive over a formatting quirk — but a genuine
+    a regex keeps a whole heal alive over a formatting quirk, but a genuine
     malformed response still raises, because silently returning {} would make
     the next step invent a patch out of nothing.
     """

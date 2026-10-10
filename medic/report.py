@@ -7,8 +7,8 @@ patient/tracing.py.
 The report separates the two modes plainly, because conflating them would
 overstate the product:
 
-  scripted  — deterministic offline agent. Bugs 1-3 are demonstrated here.
-  real      — an actual model (openai/gpt-oss-20b). Proves plumbing, tracing,
+  scripted , deterministic offline agent. Bugs 1-3 are demonstrated here.
+  real     , an actual model (openai/gpt-oss-20b). Proves plumbing, tracing,
               read-back, and ONE real end-to-end heal.
 
 A row exists only if a run exists. "not recorded" is shown as such, never as 0.
@@ -73,7 +73,7 @@ def build_report(console: Console) -> None:
     heals = _real_heals()
     repro = _reproduction()
 
-    console.print(Panel("[bold]Medic — measured report[/bold]", border_style="cyan"))
+    console.print(Panel("[bold]Medic, measured report[/bold]", border_style="cyan"))
     console.print(
         f"[dim]{len(runs)} recorded runs · every number read from a run's own "
         f"recorder, never estimated[/dim]\n"
@@ -151,7 +151,7 @@ def build_report(console: Console) -> None:
     console.print(t2)
 
     console.print(
-        "\n[dim]The 'scripted' rows are NOT LLM heals — "
+        "\n[dim]The 'scripted' rows are NOT LLM heals, "
         "tests/test_heal_machinery.py calls surgeon.deterministic_patch() directly "
         "and never calls an LLM. They prove the patch/verify machinery, nothing "
         "more. A 'real' row means a real model named the span and wrote the "
@@ -167,7 +167,7 @@ def build_report(console: Console) -> None:
         train = verify.get("train") or {}
         llm = att.get("llm_metrics") or {}
 
-        console.print(f"\n[bold]3. Measured cost per heal — {bug}[/bold]\n")
+        console.print(f"\n[bold]3. Measured cost per heal, {bug}[/bold]\n")
         t3 = Table(show_header=True, header_style="bold", box=None)
         t3.add_column("")
         t3.add_column("steps", justify="right")
@@ -217,7 +217,7 @@ def build_report(console: Console) -> None:
         "• Real-model heal is demonstrated for [bold]loop[/bold] only.\n"
         "• Bugs 1 and 2 are demonstrated with the deterministic scripted agent.\n"
         "• A capable model does NOT reproduce bug 1 from a vague tool "
-        "description, because it reads the JSON schema rather than the prose — "
+        "description, because it reads the JSON schema rather than the prose, "
         "so that bug is real for weaker agents, not for this one.\n"
         "• Costs use the rate table in patient/tracing.py, not a provider invoice.\n"
         "• Trace read-back works via /api/traces/v3 with the ingest key; "

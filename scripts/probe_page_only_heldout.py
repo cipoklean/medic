@@ -68,7 +68,7 @@ def main() -> int:
 
     rows = []
 
-    print(f"BUGGY config — the bug MUST fire ({MODEL})\n")
+    print(f"BUGGY config, the bug MUST fire ({MODEL})\n")
     reset_bug("parse_error")
     buggy = apply_bug("parse_error", write=False)
     for tid in NEW:

@@ -2,7 +2,7 @@
 
 Held-out tasks are the whole point. A patch that fixes the train task and
 nothing else has overfitted, and an overfitted "self-healing agent" is worse
-than no product at all — it is a product that reports false confidence.
+than no product at all, it is a product that reports false confidence.
 
 Metrics are MEASURED from the recorder: steps, spans, tokens, latency, cost.
 Nothing here is estimated except `est_cost_usd`, which is counted tokens times a

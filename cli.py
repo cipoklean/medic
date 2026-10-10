@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-"""Medic CLI — Typer + Rich.
+"""Medic CLI, Typer + Rich.
 
   python cli.py doctor              env + neatlogs doctor + LLM ping
   python cli.py run --bug loop      inject a bug, run the patient, show the check
@@ -25,7 +25,7 @@ from patient.config import ROOT, get, load_env, llm_configured, llm_settings
 
 load_env()
 
-app = typer.Typer(add_completion=False, help="Medic — the self-healing agent")
+app = typer.Typer(add_completion=False, help="Medic, the self-healing agent")
 console = Console()
 
 BUGS = ["wrong_args", "parse_error", "loop", "hallucinated_citation"]
@@ -46,7 +46,7 @@ def _warn(msg: str) -> None:
 @app.command()
 def doctor() -> None:
     """Environment, neatlogs SDK, and LLM connectivity."""
-    console.print(Panel("[bold]Medic — doctor[/bold]", border_style="cyan"))
+    console.print(Panel("[bold]Medic, doctor[/bold]", border_style="cyan"))
 
     # ── env ──
     table = Table(show_header=True, header_style="bold")
@@ -56,7 +56,7 @@ def doctor() -> None:
     token = get("NEATLOGS_TOKEN")
     project = get("NEATLOGS_PROJECT_ID")
     table.add_row("NEATLOGS_API_KEY (ingest)", "[green]set[/green]" if ingest else "[yellow]missing[/yellow]")
-    table.add_row("NEATLOGS_TOKEN (read)", "[green]set[/green]" if token else "[yellow]missing — API read disabled[/yellow]")
+    table.add_row("NEATLOGS_TOKEN (read)", "[green]set[/green]" if token else "[yellow]missing, API read disabled[/yellow]")
     table.add_row("NEATLOGS_PROJECT_ID", "[green]set[/green]" if project else "[yellow]missing[/yellow]")
     s = llm_settings()
     table.add_row(
@@ -107,7 +107,7 @@ def doctor() -> None:
         except Exception as exc:
             _fail(f"LLM ping failed: {type(exc).__name__}: {exc}")
     else:
-        _warn("LLM not configured — offline scripted mode only (set LLM_BASE_URL/LLM_API_KEY/LLM_MODEL)")
+        _warn("LLM not configured, offline scripted mode only (set LLM_BASE_URL/LLM_API_KEY/LLM_MODEL)")
 
     console.print(
         "\n[dim]Read-back of traces needs a service-account token, which is NOT the "
@@ -175,7 +175,7 @@ def run(
 
     console.print()
     if verdict.passed:
-        _ok(f"check PASSED — {verdict.reason}")
+        _ok(f"check PASSED, {verdict.reason}")
     else:
         _fail(f"check FAILED [{verdict.failure_type or 'unknown'}]: {verdict.reason}")
         for d in verdict.details:

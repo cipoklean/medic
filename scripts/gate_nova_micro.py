@@ -39,7 +39,7 @@ def main() -> int:
     os.environ.setdefault("MEDIC_TOKEN_CEILING", "30000")
 
     tasks = all_tasks()
-    print(f"GATE — clean medic.yaml on {MODEL}")
+    print(f"GATE, clean medic.yaml on {MODEL}")
     print(f"{len(tasks)} tasks x {RUNS} runs · need {NEEDED}/{RUNS} per task\n")
 
     per_task: dict[str, dict] = {}
@@ -102,7 +102,7 @@ def main() -> int:
     print("=" * 62)
     for t, v in per_task.items():
         print(f"  {t:28} {v['passes']}/{RUNS} pass  {'OK' if v['ok'] else 'GATE FAIL'}")
-    print(f"\nGATE: {'PASSED' if not failing else 'FAILED — stop and report'}")
+    print(f"\nGATE: {'PASSED' if not failing else 'FAILED, stop and report'}")
     if failing:
         print(f"failing: {failing}")
     print(f"wrote {out}")

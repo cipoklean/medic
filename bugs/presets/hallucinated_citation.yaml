@@ -1,6 +1,6 @@
-# Bug 4 — HALLUCINATED CITATIONS.
+# Bug 4, HALLUCINATED CITATIONS.
 # Differs from clean in ONE respect: the rule about what may be cited.
-# The stop rule is kept intact on purpose — otherwise this preset would also
+# The stop rule is kept intact on purpose, otherwise this preset would also
 # inject bug 3, and a preset that secretly carries a second bug cannot prove
 # anything when its check passes.
 system_prompt: |

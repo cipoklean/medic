@@ -1,4 +1,4 @@
-"""Trace loading — neatlogs read API first, local JSON always.
+"""Trace loading, neatlogs read API first, local JSON always.
 
 RESOLVED BY EXPERIMENT (2026-10-10), not by reading their docs:
 
@@ -15,7 +15,7 @@ per-trace readback route `/api/traces/v3/<id>` accepts the ingest key, because
 that is the route the SDK's own `neatlogs doctor --probe` uses internally.
 
 So NEATLOGS_TOKEN / NEATLOGS_PROJECT_ID are NOT required. One key is enough.
-The local-JSON fallback still exists for when neatlogs is unreachable — a heal
+The local-JSON fallback still exists for when neatlogs is unreachable, a heal
 that dies because the vendor is down is a heal that breaks on demo day.
 
 Span shape (captured, not guessed):
@@ -23,7 +23,7 @@ Span shape (captured, not guessed):
   status ("SUCCESS"/...), data (a PYTHON-REPR STRING, not JSON),
   span_metadata (also a repr string, holds token_usage), createdAt/updatedAt.
 `data` and `span_metadata` come back repr-encoded, so they are parsed with
-ast.literal_eval — a plain json.loads would raise on every span.
+ast.literal_eval, a plain json.loads would raise on every span.
 """
 from __future__ import annotations
 

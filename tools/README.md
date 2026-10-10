@@ -24,4 +24,4 @@ checkpoints, although `entire-agent-hermes calculate-tokens` returns correct
 counts when invoked directly (405,676 input / 109,128 output / 248 API calls).
 Entire does not appear to call the `token_calculator` capability during
 `session attach`, so the field stays empty. Declared `true` because the
-subcommand genuinely works — but the end-to-end number is not yet flowing.
+subcommand genuinely works, but the end-to-end number is not yet flowing.

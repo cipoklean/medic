@@ -23,7 +23,7 @@ Two properties make the hard checks meaningful:
     in json.loads and the bug would masquerade as a parse error.
 
 Deterministic by construction: no randomness, no clock, no network. The same
-config always produces the same run — which is what "heal it twice in a row"
+config always produces the same run, which is what "heal it twice in a row"
 requires.
 """
 from __future__ import annotations
@@ -76,7 +76,7 @@ def _resp(msg, prompt_tokens=120, completion_tokens=35):
 INVENTED_URL = "https://widget-facts.example.org/pricing-2024"
 
 # Prose the model passes when the calculator description never shows an
-# example. It is a legal JSON string and a legal KEY — only the VALUE is wrong,
+# example. It is a legal JSON string and a legal KEY, only the VALUE is wrong,
 # so jsonschema is the thing that catches it.
 PROSE_EXPRESSION = "the unit price times the quantity minus twelve percent"
 
@@ -153,7 +153,7 @@ class ScriptedLLM:
             return self._on_search_results(payload, messages)
         if "text" in payload:
             # A page was read. WITHOUT a stop rule a literal model does not
-            # treat that as "enough" — it goes back for more sources. That
+            # treat that as "enough", it goes back for more sources. That
             # extra searching is bug 3, so it must not be short-circuited by
             # having the page text available.
             return self._on_page(payload.get("text", ""), messages)
@@ -257,7 +257,7 @@ class ScriptedLLM:
             return self._final()
         self.computed_expression = expr
         if prose:
-            # Valid JSON, right key, WRONG value — jsonschema catches this.
+            # Valid JSON, right key, WRONG value, jsonschema catches this.
             return _resp(
                 _Msg(tool_calls=[_Call("calculator", json.dumps({"expression": PROSE_EXPRESSION}), self._calls)])
             )
@@ -385,7 +385,7 @@ def expression_for_question(text: str) -> str | None:
     if "one case" in low or "case cost" in low:
         # 169.98 total minus ONE 79.99 gadget = 89.99.
         # This was "169.98-(79.99*2)", which doubled the gadget price and
-        # produced 10.00 — and the task's expected_answer was written to match
+        # produced 10.00, and the task's expected_answer was written to match
         # that wrong number, so the deterministic suite passed for years with
         # an arithmetic error baked into both halves. A real model got 89.99
         # and was failed by the check.

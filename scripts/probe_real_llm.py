@@ -6,7 +6,7 @@ harness is consistent; it does NOT prove a real model goes wrong in the same
 way. Only this script can.
 
 NO PRESET IS TUNED. Whatever the model does is recorded, including "it did not
-reproduce the bug" — which is a finding, not a failure to hide. A preset tuned
+reproduce the bug", which is a finding, not a failure to hide. A preset tuned
 until the model misbehaves would make the bug a property of the preset rather
 than of the agent.
 

@@ -1,4 +1,4 @@
-"""Heal MACHINERY tests — NOT proof that Medic heals anything.
+"""Heal MACHINERY tests, NOT proof that Medic heals anything.
 
 WHAT THIS DOES AND DOES NOT PROVE
 ---------------------------------

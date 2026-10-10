@@ -1,11 +1,11 @@
-"""Bug injection — a preset is a PATCH to the clean medic.yaml.
+"""Bug injection, a preset is a PATCH to the clean medic.yaml.
 
 Why a patch and not a whole file: the clean baseline lives in one place
 (`bugs/presets/clean.yaml`) and every preset is expressed as the minimum set of
 changes that produces the bug. If a preset were a full file, the two would
 drift and "reset" would stop being trustworthy.
 
-`apply_bug` ALWAYS starts from clean. Never "undo by editing the buggy file" —
+`apply_bug` ALWAYS starts from clean. Never "undo by editing the buggy file":
 that drifts, and a drift means `reset` no longer proves anything.
 """
 from __future__ import annotations
@@ -49,7 +49,7 @@ def deep_merge(base: dict, patch: dict) -> dict:
 def apply_bug(name: str, write: bool = True) -> dict:
     """Apply preset `name` on top of clean and (by default) write medic.yaml.
 
-    Some bugs are only half a config change — bug 2 needs a tool to actually
+    Some bugs are only half a config change, bug 2 needs a tool to actually
     misbehave. That runtime half is switched on HERE, next to the config half,
     so a caller can never get one without the other.
     """
@@ -97,7 +97,7 @@ def describe(name: str) -> dict[str, Any]:
 
 
 def backup(path=None) -> str:
-    """Back up medic.yaml OUTSIDE the repo — never as medic.yaml.bak inside it."""
+    """Back up medic.yaml OUTSIDE the repo, never as medic.yaml.bak inside it."""
     src = path or MEDIC_YAML
     dest = ROOT.parent / f"{src.name}.medic-backup"
     shutil.copy(src, dest)

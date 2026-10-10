@@ -8,8 +8,8 @@ One rule that shapes the whole file: NOTHING is printed that was not measured.
 Every number comes from the run's own recorder. If a value is unavailable the
 panel says "unavailable" rather than showing a plausible-looking zero.
 
-The LLM's proposed failure_type and confidence are shown as what they are — a
-proposal — next to the deterministic verdict, never as the verdict itself.
+The LLM's proposed failure_type and confidence are shown as what they are, a
+proposal, next to the deterministic verdict, never as the verdict itself.
 """
 from __future__ import annotations
 
@@ -54,7 +54,7 @@ def _run_panel(console: Console, verdict: dict, metrics: dict, trace_id: str) ->
     """Before-run panel. It must reflect the ACTUAL verdict.
 
     This printed a red "check FAILED" with the reason "answered in 5 steps
-    (limit 8)" — a passing reason under a failing heading — because the panel
+    (limit 8)", a passing reason under a failing heading, because the panel
     was hardcoded to FAIL. A panel that cries wolf on every green run destroys
     the one signal the screen exists to deliver.
     """
@@ -95,7 +95,7 @@ def _diagnosis_panel(console: Console, att: dict, source_note: str = "") -> None
     body.append(f"{d.get('evidence')}\n", style="white")
     body.append("confidence ", style="dim")
     body.append(f"{d.get('confidence')}  ", style="white")
-    body.append("[LLM proposal — the verdict is the hard check above]\n", style="italic dim")
+    body.append("[LLM proposal, the verdict is the hard check above]\n", style="italic dim")
     if source_note:
         body.append(f"\n{source_note}\n", style="dim magenta")
     llm = att.get("llm") or {}
@@ -167,7 +167,7 @@ def run_heal_ui(
         elif event == "already_green":
             console.print(
                 Panel(
-                    Text(f"no bug to fix — the check already passes\n{_m(payload['metrics'])}",
+                    Text(f"no bug to fix, the check already passes\n{_m(payload['metrics'])}",
                          style="green"),
                     border_style="green",
                     title="[bold green]already healthy[/bold green]",
@@ -186,7 +186,7 @@ def run_heal_ui(
         elif event == "medic_run":
             m = payload.get("metrics") or {}
             body = Text()
-            body.append("Medic's own calls — diagnose + surgeon\n", style="bold white")
+            body.append("Medic's own calls, diagnose + surgeon\n", style="bold white")
             body.append(f"  tokens {m.get('total_tokens', '?')}", style="white")
             body.append(f"  (prompt {m.get('prompt_tokens', '?')} / "
                         f"completion {m.get('completion_tokens', '?')})\n", style="dim")

@@ -3,7 +3,7 @@
 Tasks are a YAML multi-document stream; each doc is one task. `train.yaml` is the
 single task a bug is diagnosed against; `heldout.yaml` holds the unseen ones.
 
-The held-out tasks are loadable but must never be handed to diagnose/surgeon —
+The held-out tasks are loadable but must never be handed to diagnose/surgeon:
 a fix that only works on the train task has overfitted, and overfitting is the
 one failure mode this project cannot have.
 """

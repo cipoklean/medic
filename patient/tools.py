@@ -1,4 +1,4 @@
-"""Patient agent tools — 100% FIXTURE-BACKED.
+"""Patient agent tools, 100% FIXTURE-BACKED.
 
 Nothing here touches the network. A query maps to a stored JSON file under
 fixtures/search/, a URL to fixtures/pages/. An unknown key returns an explicit
@@ -51,7 +51,7 @@ def _load_search(query: str) -> dict | None:
     REAL model writes natural queries ("ACME Corp standard widgets volume
     discount price per widget") that never equal a filename. With exact-only
     matching every real query returns "no results" and the agent burns its
-    whole step budget hunting — a harness failure that reads like a model
+    whole step budget hunting, a harness failure that reads like a model
     failure.
 
     Scoring is deterministic: token overlap, no randomness, no network.
@@ -67,7 +67,7 @@ def _load_search(query: str) -> dict | None:
 
     # Words that appear in nearly every fixture and therefore carry no signal.
     # Counting them let a query about widgets match a fixture about gadgets on
-    # "price" and "order" alone — a confident, wrong result, which is worse than
+    # "price" and "order" alone, a confident, wrong result, which is worse than
     # "no results" because the agent then trusts it.
     _STOP = {
         "the", "and", "for", "with", "use", "calculator", "give", "final",
@@ -116,7 +116,7 @@ def _load_page(url: str) -> str | None:
     Only the URL's LAST PATH SEGMENT is used: the fixture name follows the
     page, not the host. Slugging the whole URL (`https://example.com/widget-price`
     -> `example_com_widget_price`) makes every fixture unreachable while
-    looking perfectly correct — the agent then quietly answers "unknown amount"
+    looking perfectly correct, the agent then quietly answers "unknown amount"
     instead of erroring, which is how a broken loader hides for hours.
     """
     path_part = url.split("//")[-1]
@@ -167,7 +167,7 @@ TOOL_SCHEMAS: dict[str, dict] = {
 def tool_definitions(descriptions: dict[str, str]) -> list[dict]:
     """Build OpenAI-style tool defs from medic.yaml descriptions.
 
-    The DESCRIPTION is the only thing Medic changes for bug 1 — so it must be
+    The DESCRIPTION is the only thing Medic changes for bug 1, so it must be
     the only thing that reaches the model.
     """
     return [
@@ -190,7 +190,7 @@ def web_search(query: str) -> dict:
         return {
             "query": query,
             "results": [],
-            "note": "no results — try a different query",
+            "note": "no results, try a different query",
         }
     return data
 
@@ -246,7 +246,7 @@ class _BrokenJson(str):
     blows up. It MUST subclass `str`: the agent guards tool output with
     `isinstance(step.output, str)`, and a plain object with only `__str__`
     slips past that guard, gets re-serialised as a JSON *string* literal, and
-    the bug disappears — the exact failure this module exists to produce.
+    the bug disappears, the exact failure this module exists to produce.
 
     Returning a plain str also keeps the tool signature honest: the agent must
     json.loads() its output, and that is precisely where it fails.
@@ -271,7 +271,7 @@ def dispatch(name: str, args: dict) -> Any:
 
 
 def cited_urls_in(text: str) -> set[str]:
-    """Every http(s) URL mentioned in a string — used by the bug-4 check."""
+    """Every http(s) URL mentioned in a string, used by the bug-4 check."""
     import re
 
     return set(re.findall(r"https?://[^\s\)\]\"'<>]+", text))

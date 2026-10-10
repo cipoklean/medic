@@ -3,7 +3,7 @@
 This exists because of a specific failure. `parse-error-gadgets` asked for the
 cost of a case given a $169.98 bundle and a $79.99 gadget. The correct answer is
 $89.99. The task expected $10.00, and the scripted LLM returned
-`169.98-(79.99*2)` — which doubles the gadget price and produces exactly $10.00.
+`169.98-(79.99*2)`, which doubles the gadget price and produces exactly $10.00.
 
 So the wrong number was written into BOTH halves of the test: the expectation and
 the stub that satisfies it. Every deterministic run agreed with itself. That is
@@ -50,7 +50,7 @@ def fixture_numbers(fixture: str) -> list[Decimal]:
     """Every number appearing in the named fixture.
 
     `expect.from` now points at a PAGE fixture, which is the only place answer
-    figures live. Search snippets deliberately carry none — see
+    figures live. Search snippets deliberately carry none, see
     test_no_snippet_leaks_an_answer below.
     """
     path = ROOT / "fixtures" / "pages" / fixture
@@ -76,14 +76,14 @@ def evaluate(expr: str, values: dict[str, Decimal]) -> Decimal:
     """Evaluate a small arithmetic expression over named fixture values."""
     allowed = {k: v for k, v in values.items()}
     safe_globals = {"__builtins__": {}, "Decimal": Decimal, **allowed}
-    return eval(expr, safe_globals)  # noqa: S307 — inputs are task files, not user data
+    return eval(expr, safe_globals)  # noqa: S307, inputs are task files, not user data
 
 
 def test_no_snippet_leaks_an_answer() -> int:
     """No search snippet may contain any task's expected number.
 
     A snippet that carries the answer makes fetch_page optional, and then a bug
-    that lives in fetch_page can never fire — which is exactly what happened:
+    that lives in fetch_page can never fire, which is exactly what happened:
     parse_error reproduced 0/9 on nova-micro with parse_err_seen=False in every
     run, because the model read the price straight out of the snippet and never
     fetched the page. The absence looked like a model difference and was a
@@ -126,7 +126,7 @@ def main() -> int:
         spec = task.get("expect")
         if not spec:
             unverified.append(tid)
-            print(f"  SKIP  {tid:30} no `expect` block — expectation is hand-written")
+            print(f"  SKIP  {tid:30} no `expect` block, expectation is hand-written")
             continue
 
         expr = spec["expr"]
@@ -161,7 +161,7 @@ def main() -> int:
     if test_no_snippet_leaks_an_answer() != 0:
         failed.append(("(snippets)", "a search snippet contains a task answer"))
     if failed:
-        print("\nMISMATCHES — the task expectation disagrees with its own fixtures:")
+        print("\nMISMATCHES, the task expectation disagrees with its own fixtures:")
         for tid, why in failed:
             print(f"  {tid}: {why}")
     if unverified:

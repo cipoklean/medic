@@ -115,7 +115,7 @@ def main() -> int:
 
     key = os.environ.get(args.api_key_env, "").strip()
     if not key:
-        print(f"{args.api_key_env} is not set — nothing to test.")
+        print(f"{args.api_key_env} is not set, nothing to test.")
         return 1
 
     if args.models:

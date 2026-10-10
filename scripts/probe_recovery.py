@@ -1,4 +1,4 @@
-"""Bug 2 recovery probe — addendum item 4.
+"""Bug 2 recovery probe, addendum item 4.
 
 `cli.py run --bug parse_error` shows the FAILURE: the tool lies, the agent has
 no recovery, the run dies. This shows the OTHER half: the SAME failure with
@@ -44,7 +44,7 @@ def main() -> int:
         return 1
 
     print("=" * 72)
-    print(f"BUG 2 RECOVERY — task {task['id']}")
+    print(f"BUG 2 RECOVERY, task {task['id']}")
     print("=" * 72)
 
     # ── BEFORE: no recovery path ──
@@ -85,7 +85,7 @@ def main() -> int:
           f"${m_a['est_cost_usd']:.6f}, stopped because '{res_a.stopped_because}'")
     print(f"  traces: {rec_b.run_id}.json (before), {rec_a.run_id}.json (after)")
 
-    # A committed evidence artefact. Measured only — no prose numbers.
+    # A committed evidence artefact. Measured only, no prose numbers.
     evidence = {
         "bug": bug,
         "task_id": task["id"],

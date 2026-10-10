@@ -3,7 +3,7 @@
 
 This is the strongest bug class available: `retry_on_parse_error: false` is a
 CONFIG DEFECT, not a tuned prompt. It is tool-level, so it should fail the same
-way on any model — and the config half already forbids recovery, which makes
+way on any model, and the config half already forbids recovery, which makes
 Medic's fix a single-field edit (false -> true).
 
 Runs train plus every held-out task. Hitting the malformed payload counts as
@@ -41,7 +41,7 @@ def main() -> int:
     os.environ.setdefault("MEDIC_TOKEN_CEILING", "30000")
 
     tasks = tasks_for("parse_error", "train") + tasks_for("parse_error", "heldout")
-    print(f"parse_error on {MODEL} — tool-level, {len(tasks)} tasks\n")
+    print(f"parse_error on {MODEL}, tool-level, {len(tasks)} tasks\n")
 
     reset_bug("parse_error")
     config = apply_bug("parse_error", write=False)

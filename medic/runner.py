@@ -11,7 +11,7 @@ this run scripted or real?" has to be a fact rather than a guess:
                                covers Bedrock, OpenRouter, NaraRouter and
                                OpenAI by changing one variable.
 
-Medic's own diagnose/surgeon steps ALWAYS use the real LLM — a scripted model
+Medic's own diagnose/surgeon steps ALWAYS use the real LLM, a scripted model
 diagnosing a scripted patient would be grading its own homework. Only the
 patient may be scripted, and only when asked.
 """

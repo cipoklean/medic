@@ -28,7 +28,7 @@ You are given:
 3. The agent's current configuration.
 
 Identify the SINGLE span whose behaviour caused the failure and name the root
-cause in the agent's CONFIGURATION — because that is the only thing Medic is
+cause in the agent's CONFIGURATION, because that is the only thing Medic is
 allowed to change. Never propose a code change.
 
 Return ONLY a JSON object:

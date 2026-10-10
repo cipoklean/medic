@@ -1,4 +1,4 @@
-# Bug 2 — MALFORMED JSON.
+# Bug 2, MALFORMED JSON.
 #
 # TWO halves, and this file is only one of them:
 #   * the RUNTIME half -> patient.tools.fetch_page returns slightly-broken JSON
@@ -12,7 +12,7 @@
 #
 # This was found by measuring, not by reading: an earlier probe reported the
 # clean and "buggy" configs as differing, but a diff of the merged YAML showed
-# config-differs-in: [] — the two runs were identical and the result was
+# config-differs-in: [], the two runs were identical and the result was
 # meaningless. A preset that cannot be distinguished from clean by its own
 # config is fine here (the runtime switch does the work) but it must never be
 # reported as a config difference.

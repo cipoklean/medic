@@ -1,4 +1,4 @@
-"""Provider fallback chain — every call records WHICH provider served it.
+"""Provider fallback chain, every call records WHICH provider served it.
 
 Two reasons this exists, in order of importance:
 
@@ -15,7 +15,7 @@ one works": an unlabelled fallback makes a result impossible to attribute.
 
 Env:
     LLM_PROVIDER_CHAIN        comma-separated names, e.g. "litellm,gemini"
-    MEDIC_ROLE_MODELS         "patient:nova-lite" — pins a role's model
+    MEDIC_ROLE_MODELS         "patient:nova-lite", pins a role's model
     LLM_API_KEY_NARA, LLM_BASE_URL_NARA, LLM_MODEL_NARA
     LLM_API_KEY,     LLM_BASE_URL,     LLM_MODEL          (Groq, or your default)
 """
@@ -128,7 +128,7 @@ def _provider(name: str, role: str = "patient") -> Provider | None:
     )
     # A role-specific override wins over the provider-wide one. Without it,
     # LLM_MODEL_LITELLM is read by BOTH roles, so pinning the patient to
-    # nova-micro silently pinned the medic to it too — and a heal then gets
+    # nova-micro silently pinned the medic to it too, and a heal then gets
     # attributed to a cheap patient model while the evidence says the medic
     # reasoned on it. A measurement attributed to the wrong model is worse than
     # no measurement.
@@ -151,7 +151,7 @@ def _role_model_for(provider_name: str, role: str) -> str:
     Takes the role explicitly. An earlier version scanned every role's model
     list and returned the first match, which meant dict ordering decided the
     outcome: `patient` sorts first, so the medic silently resolved to
-    `nova-lite` — a cheap patient model doing Medic's reasoning, which is the
+    `nova-lite`, a cheap patient model doing Medic's reasoning, which is the
     exact degradation the role split exists to prevent. The returned model is
     checked against the requested role's list ONLY.
     """
@@ -186,7 +186,7 @@ def chain(role: str = "patient") -> list[Provider]:
 
     A provider that is NAMED but not configured is an ERROR, never a silent
     skip. Skipping it let `LLM_PROVIDER_CHAIN=openrouter` fall through to the
-    generic LLM_* provider — which is GROQ's credentials — so a probe labelled
+    generic LLM_* provider, which is GROQ's credentials, so a probe labelled
     "openrouter" actually hit Groq and produced a plausible, wrong result. A
     measurement attributed to the wrong host is worse than no measurement.
     """
@@ -249,7 +249,7 @@ def build_client(preferred: str | None = None, role: str = "patient"):
     from openai import OpenAI
 
     # `role` must be forwarded here. `chain()` defaults to "patient", so calling
-    # it bare made build_client(role="medic") return the PATIENT's provider — a
+    # it bare made build_client(role="medic") return the PATIENT's provider, a
     # heal would then be attributed to the cheap patient model while the
     # evidence claimed the medic reasoned on Sonnet. Verified directly:
     # chain(role="medic") resolved claude-sonnet-4.6 while

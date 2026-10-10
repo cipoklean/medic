@@ -1,4 +1,4 @@
-"""Env loading. Values live in .env only — never in source, never committed."""
+"""Env loading. Values live in .env only, never in source, never committed."""
 from __future__ import annotations
 
 import os
@@ -8,12 +8,12 @@ ROOT = Path(__file__).resolve().parents[1]
 
 
 def load_env() -> None:
-    """Minimal .env loader — avoids a python-dotenv dependency.
+    """Minimal .env loader, avoids a python-dotenv dependency.
 
     A key defined TWICE in .env is a hard error. It happened here: an appended
     provider block shadowed a real key with an empty value, and because
     os.environ.setdefault never overwrites an existing entry, the empty value
-    won — so the provider looked "not configured" while a valid key sat a few
+    won, so the provider looked "not configured" while a valid key sat a few
     lines above. Silent, and it cost real debugging time.
     """
     env_file = ROOT / ".env"
@@ -40,7 +40,7 @@ def load_env() -> None:
     if duplicates:
         raise RuntimeError(
             "Duplicate key(s) in .env: " + ", ".join(duplicates) + ". "
-            "Remove the later definition — it can silently shadow a valid value."
+            "Remove the later definition, it can silently shadow a valid value."
         )
 
 
@@ -62,7 +62,7 @@ def neatlogs_ingest_key() -> str:
 
 
 def neatlogs_read_creds() -> tuple[str, str]:
-    """Returns (token, project_id). EMPTY when not configured — callers must
+    """Returns (token, project_id). EMPTY when not configured, callers must
     handle that as 'API read unavailable, use local fallback'."""
     return (
         os.environ.get("NEATLOGS_TOKEN", "").strip(),

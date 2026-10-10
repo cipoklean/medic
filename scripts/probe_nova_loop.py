@@ -32,7 +32,7 @@ from tasks.loader import train_task_for
 
 MODELS = ["nova-lite", "nova-micro", "nova-2-lite"]
 RUNS = 3
-NEEDED = 2          # stop as soon as it reproduces twice — every run costs money
+NEEDED = 2          # stop as soon as it reproduces twice, every run costs money
 MAX_STEPS = 15
 TOKEN_CEILING = 30000
 
@@ -110,7 +110,7 @@ def main() -> int:
         "question": "Which nova model reproduces the ORIGINAL loop preset as the patient?",
         "guardrails": {"max_steps": MAX_STEPS, "token_ceiling": TOKEN_CEILING,
                        "needed_to_count": NEEDED},
-        "preset": "loop (original, unmodified — loop_strong NOT used)",
+        "preset": "loop (original, unmodified, loop_strong NOT used)",
         "models": per_model,
         "most_reliable": best,
         "reliable_models": reliable,
@@ -127,7 +127,7 @@ def main() -> int:
     for m, v in per_model.items():
         print(f"  {m:14} {v['reproductions']}/{len(v['runs'])} reproduced"
               f"   {'RELIABLE' if v['reliable'] else ''}")
-    print(f"\nPIN: {best if reliable else 'none — no nova model reproduces reliably'}")
+    print(f"\nPIN: {best if reliable else 'none, no nova model reproduces reliably'}")
     print(f"wrote {out}")
     return 0 if reliable else 1
 

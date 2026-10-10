@@ -1,6 +1,6 @@
 """HARD CHECKS. No LLM is consulted, ever.
 
-"Green" means these pass. An LLM's opinion is never the verdict — that is the
+"Green" means these pass. An LLM's opinion is never the verdict, that is the
 entire product claim, so a check that asks a model whether it did well would
 destroy it.
 
@@ -248,7 +248,7 @@ def check_loop(task: dict, result) -> Verdict:
     if round(expected, 2) not in _numbers_in(result.answer):
         # NOT a loop. The agent finished inside its budget and produced a wrong
         # number, which is the wrong_args fault. Labelling this "loop" would
-        # send Medic to patch max_steps or add a stop rule — a confident fix to
+        # send Medic to patch max_steps or add a stop rule, a confident fix to
         # a problem that was never there, on a run that would then still fail.
         #
         # The loop check runs on this task, so it has to name the real cause.
@@ -261,7 +261,7 @@ def check_loop(task: dict, result) -> Verdict:
             ),
             details=[
                 f"answer was: {result.answer[:200]}",
-                "this is not a runaway — the agent stopped on its own",
+                "this is not a runaway, the agent stopped on its own",
                 "a wrong number from a bounded run is a wrong-args fault"
                 + ("; a tool was called with a non-expression argument" if tool_bad else ""),
             ],

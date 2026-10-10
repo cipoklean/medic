@@ -22,7 +22,7 @@ if ! command -v entire >/dev/null 2>&1; then
   exit 1
 fi
 if ! command -v entire-agent-hermes >/dev/null 2>&1; then
-  echo "entire-agent-hermes not on PATH — cp tools/entire-agent-hermes ~/.local/bin/" >&2
+  echo "entire-agent-hermes not on PATH, cp tools/entire-agent-hermes ~/.local/bin/" >&2
   exit 1
 fi
 

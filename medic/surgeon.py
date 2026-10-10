@@ -4,7 +4,7 @@ Two safety properties, both enforced in code and never in the prompt:
 
   1. ALLOWLIST. `field` may only name system_prompt, tools.<name>.description,
      max_steps or retry_on_parse_error. A model asking to patch a Python file,
-     or to invent a new top-level key, is refused — Medic edits exactly one
+     or to invent a new top-level key, is refused, Medic edits exactly one
      file and only these fields within it.
   2. TYPE CHECK. max_steps must be an int, retry_on_parse_error a bool, a
      description a string. A patch that would make medic.yaml unloadable is
@@ -57,7 +57,7 @@ Rules:
 - Keep the field's existing TYPE (max_steps is an int, retry_on_parse_error a bool).
 - For a stop/loop failure, restore an explicit stop rule in system_prompt.
 - For wrong arguments, make the tool description state the argument format AND
-  give one concrete example. Do not change the JSON schema — it is correct.
+  give one concrete example. Do not change the JSON schema, it is correct.
 - For a parse error, set retry_on_parse_error to true.
 - For a hallucinated citation, require that only fetched URLs may be cited.
 - Never propose a code change. Never add a new field.
@@ -162,7 +162,7 @@ def colour_diff(text: str) -> str:
 
 # ── minimal, deterministic fallbacks ─────────────────────────────────────
 # If the LLM is unavailable or refuses, these fix the four known bugs without
-# a model. They are NOT a substitute for the LLM — they exist so a heal can be
+# a model. They are NOT a substitute for the LLM, they exist so a heal can be
 # demonstrated offline, and so the demo has a floor.
 
 DETERMINISTIC_FIXES: dict[str, dict] = {
@@ -209,7 +209,7 @@ def _strip_citation_permission(prompt: str) -> str:
     what you know. If you did not fetch a page, you may still cite the URL from
     the search result", and a literal model obeys the instruction it meets
     FIRST. A config fix that adds a rule while leaving the contradicting one
-    in place does not fix anything — it just makes the prompt longer.
+    in place does not fix anything, it just makes the prompt longer.
     """
     lines = []
     for line in prompt.splitlines(keepends=True):

@@ -1,8 +1,8 @@
 """DUAL TRACING.
 
 Every span goes to TWO places:
-  1. neatlogs  (the hosted product — the trace a judge looks at)
-  2. runs/<run_id>.json  (our own recorder — works offline, survives an API
+  1. neatlogs  (the hosted product, the trace a judge looks at)
+  2. runs/<run_id>.json  (our own recorder, works offline, survives an API
      outage, and is what Medic falls back to)
 
 The local recorder is deliberately independent of neatlogs: if the SDK throws,
@@ -201,7 +201,7 @@ class Recorder:
         }
 
     def est_cost_usd(self) -> float:
-        """Measured-token estimate. Rates are an explicit table, not a guess —
+        """Measured-token estimate. Rates are an explicit table, not a guess:
         update if you switch model."""
         return round(
             self.metrics()["prompt_tokens"] / 1_000_000 * 3.00

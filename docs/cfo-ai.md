@@ -1,7 +1,7 @@
-# cfo.ai — Medic business plan
+# cfo.ai, Medic business plan
 
 Sponsor: **cfo.ai**. The input sheet is
-[`cfo-ai-input.md`](cfo-ai-input.md) — paste that in, not this file.
+[`cfo-ai-input.md`](cfo-ai-input.md), paste that in, not this file.
 
 ---
 
@@ -34,13 +34,13 @@ can pull the same images.
 
 From the built cfo.ai plan, main scenario (30 teams):
 
-1. **95.5% gross margin** at month 12 — the plan's own figure, and the one to
+1. **95.5% gross margin** at month 12, the plan's own figure, and the one to
    quote. It includes Stripe fees and hosting.
 2. **MRR month 12 (Sep 2027): $1,859** · **ARR run rate Dec 2027: $29,690**
-3. **$0.009426 per heal** — measured, not estimated
+3. **$0.009426 per heal**, measured, not estimated
 4. **$225 total cash required** · **first cash-positive month: Jan 2027**
 
-**On the two margin numbers — do not mix them up:**
+**On the two margin numbers, do not mix them up:**
 
 * **95.5%** is the cfo.ai plan's gross margin. It is the real one, because it
   includes Stripe fees and hosting. Quote this.
@@ -51,8 +51,8 @@ The gap between them is Stripe and hosting, and that gap is the honest part.
 
 **Do not lead with the 107× medic-model spread.** Only Sonnet has ever served a
 Medic call; haiku and nova-micro are rate-card arithmetic, not results. It is a
-price ratio and belongs in the sheet as an open question — "does haiku hold 0.95
-confidence?" — not on screen as a finding.
+price ratio and belongs in the sheet as an open question, "does haiku hold 0.95
+confidence?", not on screen as a finding.
 
 ---
 
@@ -78,9 +78,9 @@ The measured core is deliberately small and hard. The assumptions are the model.
 - [x] Export link added above
 - [x] Plan numbers recorded (main scenario, 30 teams)
 - [ ] Screenshots captured to `docs/assets/`
-- [ ] Numbers reconciled against `docs/business.md` §4–5
+- [ ] Numbers reconciled against `docs/business.md` §4 to 5
 
 > **Two margin figures, deliberately kept separate.** cfo.ai reports **95.5%**
-> gross margin at month 12, which includes Stripe fees and hosting — that is the
+> gross margin at month 12, which includes Stripe fees and hosting, that is the
 > number to quote anywhere externally. Our own **98.6%** is inference-only. Both
 > are correct; they answer different questions.

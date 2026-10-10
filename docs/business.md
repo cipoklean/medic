@@ -1,4 +1,4 @@
-# Medic — business model draft inputs for cfo.ai
+# Medic, business model draft inputs for cfo.ai
 
 > These are **inputs**, not a finished plan. Every number is measured from a real
 > run in `evidence/`; anything unmeasured is labelled as such. Nothing here is
@@ -6,7 +6,7 @@
 
 ## 1. The problem
 
-Teams running agents in production already pay for observability — they see the
+Teams running agents in production already pay for observability, they see the
 trace. What they lack is a **verdict**: nobody reads a 15-span trace at 2am to
 work out which step broke and what config change fixes it. So an agent silently
 degrades (loops until its budget dies, emits prose where a tool wants an
@@ -24,14 +24,14 @@ suggestion.
 
 ## 2. Target user
 
-Teams running agents in production — specifically the person who owns the
+Teams running agents in production, specifically the person who owns the
 failure: a small eng/AI team with agents in production who have traces but no
 verification loop.
 
 Best first wedge: agents that are **config-driven** (prompt, tool descriptions,
 caps, retry flags in a YAML or JSON config file), because that is exactly the
 surface Medic can safely edit. Agents that require code changes are explicitly
-out of scope — Medic will refuse to patch a field it was not given.
+out of scope, Medic will refuse to patch a field it was not given.
 
 ## 3. Pricing shape
 
@@ -47,19 +47,19 @@ to justify than pricing on headcount. Per-seat stays for teams who want the
 regression suite.
 
 Free-tier metering that keeps it free: a heal is ~30k tokens (measured, below),
-so a hosted team of 20 running constant heals is only ~$10–15/month of inference
+so a hosted team of 20 running constant heals is only ~$10 to 15/month of inference
 at current rates. The margin is in the verification and history, not the tokens.
 
-## 4. Cost per heal — MEASURED, no estimates
+## 4. Cost per heal, MEASURED, no estimates
 
-From `evidence/real_heal_loop_parse_error.json` — the **live** heal. Patient
+From `evidence/real_heal_loop_parse_error.json`, the **live** heal. Patient
 `litellm:nova-micro`, Medic `litellm:claude-sonnet-4.6`, both on AWS Bedrock.
 
 | Component | Steps | Tokens | Cost (provider rate card) |
 |---|---|---|---|
 | Patient run, before (fails) | 2 | 2,020 | $0.000155 |
-| Patient run, after — train | 3 | 4,721 | $0.000363 |
-| Patient run, after — held-out ×2 | 1 + 1 | 3,860 | $0.000297 |
+| Patient run, after, train | 3 | 4,721 | $0.000363 |
+| Patient run, after, held-out ×2 | 1 + 1 | 3,860 | $0.000297 |
 | Patient run, clean control | 3 | 4,707 | $0.000362 |
 | **Patient total per heal** | | **15,342** | **$0.001181** |
 | **Medic's own diagnose + surgeon** | | **1,596** (1,392 in + 204 out) | **$0.007960** |
@@ -95,17 +95,17 @@ the cheapest and most expensive medic.
 
 | Model | Provider | Steps | Tokens | Cost |
 |---|---|---|---|---|
-| nova-micro | litellm / Bedrock | 2–3 | 2,020–4,707 | $0.00016–0.00036 |
-| laguna-s-2.1 | nara | 2 | 1,374–2,235 | $0.006–0.009 |
+| nova-micro | litellm / Bedrock | 2 to 3 | 2,020 to 4,707 | $0.00016 to 0.00036 |
+| laguna-s-2.1 | nara | 2 | 1,374 to 2,235 | $0.006 to 0.009 |
 | nemotron-3-ultra-free | nara | 3 | 4,364 | $0.0177 |
 
-A healthy run on nova-micro costs **~$0.0003**. A heal costs **$0.0091** — about
+A healthy run on nova-micro costs **~$0.0003**. A heal costs **$0.0091**, about
 **30× a healthy run**, and that is the number a buyer compares against the cost
 of a human noticing the failure at all.
 
 ### The savings argument
 
-For `parse_error` the token reduction is not the story — the buggy run *crashed*
+For `parse_error` the token reduction is not the story, the buggy run *crashed*
 at 2 steps, so it was cheap. The saving is different and worth stating precisely:
 
 * **before:** the agent produced **no answer at all**. A tool returned malformed
@@ -114,13 +114,13 @@ at 2 steps, so it was cheap. The saving is different and worth stating precisely
 
 So this bug's value is **availability, not efficiency**. The token-saving
 argument belongs to the recorded `loop` heal, where the same task went from
-15,478 tokens to 7,587 — a measured **51% reduction** on a task the patch never
+15,478 tokens to 7,587, a measured **51% reduction** on a task the patch never
 saw. Both claims are real; they attach to different bugs.
 
 ### Provider constraint worth pricing against
 
-* **Groq free tier: 200,000 tokens/day.** At ~36–46k per `loop` take that is
-  **~4 takes/day** — measured, which is why Groq left the chain.
+* **Groq free tier: 200,000 tokens/day.** At ~36 to 46k per `loop` take that is
+  **~4 takes/day**, measured, which is why Groq left the chain.
 * **The LiteLLM gateway reports no `cost` field in its usage object.** Figures
   here come from its `/model/info` endpoint, which exposes real per-token rates.
   Worth knowing before anyone tries to reconcile against an invoice.
@@ -133,8 +133,8 @@ Assumptions, stated so they can be challenged:
 
 * 20 heals/team/month, all on one provider tier.
 * Inference at **$0.009426/heal (MEASURED)** → **$0.19/team/month**.
-  *(Superseded: this section previously carried $0.11–0.17/heal from the earlier
-  Groq-based measurement. The live heal on Bedrock measured $0.009426 — 12–18×
+  *(Superseded: this section previously carried $0.11 to 0.17/heal from the earlier
+  Groq-based measurement. The live heal on Bedrock measured $0.009426 to 12 to 18×
   lower. See §4.)*
 * Hosting and storage of traces and reports: assumed $0.50/team/month.
 * Inference-only gross margin ≈ **98.6%** at $49/mo; **95.5%** once Stripe fees and hosting are included (cfo.ai).
@@ -142,7 +142,7 @@ Assumptions, stated so they can be challenged:
 At the measured cost, inference is **under 1% of revenue** at every tier, giving
 an **inference-only margin of ~98.6%**.
 
-**The number to quote is 95.5%** — cfo.ai's gross margin at month 12, which adds
+**The number to quote is 95.5%**, cfo.ai's gross margin at month 12, which adds
 Stripe fees and hosting on top of inference. Plan:
 https://cfo.ai/s/teLQ2nwFftStndEU
 
@@ -154,7 +154,7 @@ has yet verified that a smaller model diagnoses as accurately.
 
 The cost structure is unusually favourable: **the expensive part of the product
 is verification (running train + held-out tasks), not model inference.** That is
-also what makes it defensible — a cheaper competitor can copy the suggestion
+also what makes it defensible, a cheaper competitor can copy the suggestion
 step, but copying the verification harness means re-deriving every hard check, and
 every check is bug-specific.
 
@@ -165,10 +165,10 @@ part-time helper from month 4.
 
 | Phase | Months | Focus | Approx. spend |
 |---|---|---|---|
-| Ship | 1–3 | bugs 1–4 healed on a real model, README + GIF, public repo, first Entire + neatlogs case study | near zero (own keys) |
-| Prove | 4–6 | 10 design partners, hosted beta, first paying teams, regression suite | ~$300/mo inference |
-| Grow | 7–9 | self-serve signup, docs, integrations for more agent frameworks, first conference talk | ~$900/mo |
-| Scale | 10–12 | per-seat team tier, CI integration, second agent integration | ~$2,000/mo |
+| Ship | 1 to 3 | bugs 1 to 4 healed on a real model, README + GIF, public repo, first Entire + neatlogs case study | near zero (own keys) |
+| Prove | 4 to 6 | 10 design partners, hosted beta, first paying teams, regression suite | ~$300/mo inference |
+| Grow | 7 to 9 | self-serve signup, docs, integrations for more agent frameworks, first conference talk | ~$900/mo |
+| Scale | 10 to 12 | per-seat team tier, CI integration, second agent integration | ~$2,000/mo |
 
 **Assumptions to test:** that teams pay for verification rather than for the
 patch; that a heal is rare enough to price per-trace; that the Entire and neatlogs
@@ -184,11 +184,11 @@ Stated plainly, because a plan that cannot fail is not a plan:
   is the *held-out proof*, which is what stops a config "fix" from working on one
   task and silently breaking others.
 * **Provider cost.** A heal is $0.0094 measured on Sonnet, but a frontier-model
-  default would raise the medic share materially — **assumption, not measured**.
+  default would raise the medic share materially, **assumption, not measured**.
   Per-healed-trace pricing absorbs that; per-seat alone would not.
 * **A platform fixes it.** If neatlogs or a CI vendor ships auto-patching with
   verification built in, the wedge narrows to "bring your own agent and your own
-  checks" — which is the stated path to using Medic, so the business survives the
+  checks", which is the stated path to using Medic, so the business survives the
   platform eating the bundled version.
 
 ## 8. Evidence backing this document
@@ -212,9 +212,9 @@ product decision rather than a bug:
 
 1. **The failures are model-specific.** The same buggy prompt loops
    `gpt-oss-20b` (12 steps) and not `laguna-s-2.1`, `nemotron-3-ultra-free` or
-   `agnes-2.5-flash` (3–5 steps). A hosted Medic should therefore record the
+   `agnes-2.5-flash` (3 to 5 steps). A hosted Medic should therefore record the
    model alongside the trace and expect the same config to be healthy on one
-   model and broken on another. That is a feature — it is exactly the
+   model and broken on another. That is a feature, it is exactly the
    "quietly wrong, but only on this model" case nobody catches by reading a
    prompt.
 2. **Two of four bugs never reproduced on a strong model.** Bugs 1 and 2 are real

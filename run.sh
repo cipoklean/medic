@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Medic — the live heal, from a fresh terminal.
+# Medic, the live heal, from a fresh terminal.
 #
 #   bash run.sh reset    # restore the buggy parse_error config
 #   bash run.sh before   # the failing run (frame 1)
@@ -21,7 +21,7 @@ set -a && . ./.env && set +a
 export LLM_MODEL_LITELLM_PATIENT=nova-micro
 
 PY=.venv/bin/python
-[ -x "$PY" ] || { echo "no venv — run: python3 -m venv .venv && .venv/bin/pip install -r requirements.txt"; exit 1; }
+[ -x "$PY" ] || { echo "no venv, run: python3 -m venv .venv && .venv/bin/pip install -r requirements.txt"; exit 1; }
 
 cmd="${1:-help}"
 case "$cmd" in

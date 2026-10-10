@@ -1,14 +1,14 @@
 """Client-side rate limiting.
 
 Why this is here and not in the provider config: the free NaraRouter plan is
-15 requests/minute, and a single real heal issues a BURST — diagnose, surgeon,
+15 requests/minute, and a single real heal issues a BURST, diagnose, surgeon,
 then verification across the train task plus every held-out task. Without a
 limiter the burst trips the limit mid-run, and a trip mid-heal is the worst
 possible time for it: the trace is half-written and the demo is on camera.
 
 The limiter is deliberately dumb and honest about what it does NOT protect:
 it paces THIS process only. It cannot see other processes, and it does not
-back off on a 429 — see medic/llm.py, which owns that.
+back off on a 429, see medic/llm.py, which owns that.
 
   MEDIC_RATE_RPM      requests per minute (default 15, the free-plan limit)
   MEDIC_RATE_RPM_<P>  per-provider override, e.g. MEDIC_RATE_RPM_GROQ=30

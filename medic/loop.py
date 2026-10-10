@@ -8,7 +8,7 @@ on the train task alone is how a self-healing tool learns to overfit.
 
 The patch is applied to a COPY and written to medic.yaml only after verification
 passes (or when the caller passes apply_patch=True). A rejected or failing patch
-never becomes the new baseline — a config that is still broken is not progress,
+never becomes the new baseline, a config that is still broken is not progress,
 and carrying it forward makes the next attempt diagnose the wrong thing.
 """
 from __future__ import annotations

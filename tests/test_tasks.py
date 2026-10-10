@@ -65,7 +65,7 @@ def check_bugs_fail() -> list[str]:
 
 
 def check_determinism(times: int = 2) -> list[str]:
-    """The same config must produce the same run every time — the definition
+    """The same config must produce the same run every time, the definition
     of done says 'twice in a row', so it is worth enforcing mechanically."""
     problems: list[str] = []
     config = clean_config()

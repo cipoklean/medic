@@ -97,7 +97,7 @@ def test_roles_resolve_different_models():
 
     Verified live: `medic` resolved to nova-lite because _role_model_for
     scanned every role's list and dict order put `patient` first. That hands
-    Medic's reasoning to a cheap patient model — the exact degradation the
+    Medic's reasoning to a cheap patient model, the exact degradation the
     role split exists to prevent, and invisible in the output because the
     chain line only showed the patient's model.
     """
@@ -155,7 +155,7 @@ def test_chain_and_build_client_agree():
     """The reader and the writer must not disagree about which model serves a role.
 
     A split like this is invisible in the chain line, which only prints the
-    patient — so the wrong attribution looks correct until someone reads the
+    patient, so the wrong attribution looks correct until someone reads the
     evidence file.
     """
     import os
