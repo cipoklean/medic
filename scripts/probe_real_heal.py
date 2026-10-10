@@ -28,6 +28,15 @@ from patient import tracing
 from tasks.loader import BUGS, heldout_for, train_task_for
 
 
+def init_tracing() -> bool:
+    """Without this every run records neatlogs_trace_id=None and the evidence
+    has no trace link at all. run_once does not init the SDK - the caller owns
+    that - so a script that forgets produces a silent, link-less artefact."""
+    from patient.tracing import init_neatlogs
+
+    return init_neatlogs("patient-agent", tags=["demo", "real-llm", "real-heal"])
+
+
 def readback(run_id: str, trace_id: str | None) -> dict:
     """Can we read this run back from neatlogs? Recorded either way."""
     if not trace_id:
@@ -75,6 +84,8 @@ def baseline(bug: str) -> dict:
 
 def main() -> int:
     bug = "loop"
+    live = init_tracing()
+    print(f"neatlogs active: {live}")
     print("=" * 74)
     print(f"REAL-LLM HEAL EVIDENCE — bug {bug}")
     print("=" * 74)
@@ -144,10 +155,22 @@ def main() -> int:
           f"{control['metrics']['steps']} steps · "
           f"{control['metrics']['total_tokens']} tokens")
 
+    # Refuse to write a "heal" when none happened. `outcome.healed` is also True
+    # on the already-healthy path, where nothing was diagnosed or patched; writing
+    # that as a heal would be the exact overclaim this project exists to avoid.
+    real_heal = bool(outcome.healed and outcome.attempts)
+    if outcome.healed and not outcome.attempts:
+        print("\n  NOTE: the baseline PASSED on this model — the bug did not\n"
+              "        reproduce, so there was nothing for the LLM to heal.\n"
+              "        Recording that, NOT a heal.")
+    if not real_heal:
+        print("\n  NOT writing a heal record: no LLM patch was proposed or verified.")
+        reset_bug(bug)
+        return 2
+
     report = {
         "claim": "A real LLM diagnosed the failing trace and proposed a medic.yaml "
                  "patch that cleared the train task AND every held-out task.",
-        "model": "openai/gpt-oss-20b (Groq), temperature 0, fixtures only",
         "bug": bug,
         "before": before,
         "attempts": attempts,
@@ -160,7 +183,7 @@ def main() -> int:
     out.write_text(json.dumps(report, indent=2, default=str))
     print(f"\nwrote {out}")
     print(f"\nHEALED: {outcome.healed}")
-    return 0 if outcome.healed else 1
+    return 0
 
 
 if __name__ == "__main__":

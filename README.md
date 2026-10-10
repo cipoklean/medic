@@ -13,16 +13,26 @@ Built for [neatHack 2026](https://docs.neatlogs.com) · hackathon by **cipoklean
 
 ```bash
 cd medic
-cp .env.example .env        # add NEATLOGS_API_KEY and an LLM key
+cp .env.example .env        # add NEATLOGS_API_KEY + an LLM key
+set -a && . ./.env && set +a # so .env wins over any stale LLM_* in your shell
+uv venv --python 3.13 .venv && uv pip install --python .venv/bin/python -r requirements.txt
+
 .venv/bin/python cli.py doctor
-.venv/bin/python cli.py heal --bug loop --llm scripted
+.venv/bin/python cli.py run  --bug loop --llm real    # the failing run, with its cost
+.venv/bin/python cli.py heal --bug loop --llm real    # diagnose → diff → verify → HEALED
 ```
 
 You will see: a red failing run with its measured cost → a diagnosis naming the
 broken span → a coloured diff against `medic.yaml` → a green re-run → a
 held-out results table → **HEALED**, with before/after numbers.
 
-No Streamlit, no web server, no network calls to the tools.
+No Streamlit, no web server, and the agent's tools never touch the network.
+
+> **The scripted path is not a substitute for the heal.**
+> `--llm scripted` works for `run`, `report` and `reset`, but **not** for `heal`.
+> Medic's diagnose and surgeon steps always use the real LLM — a scripted model
+> diagnosing a scripted patient would be grading its own homework. With no key
+> configured, `heal` fails loudly and says which variables are missing.
 
 ---
 
@@ -167,22 +177,44 @@ cp .env.example .env
 `.env`:
 
 ```
-NEATLOGS_API_KEY=…          # writes traces  (also reads them back, see below)
-LLM_BASE_URL=…              # https://api.groq.com/openai/v1
+NEATLOGS_API_KEY=…          # writes traces, and reads them back (see below)
+LLM_PROVIDER_CHAIN=nara,groq
+# primary
+LLM_BASE_URL_NARA=https://router.bynara.id/v1
+LLM_API_KEY_NARA=…
+LLM_MODEL_NARA=laguna-s-2.1
+LLM_MODEL_NARA_FALLBACKS=nemotron-3-ultra-free,agnes-2.5-flash
+# fallback provider
+LLM_BASE_URL=https://api.groq.com/openai/v1
 LLM_API_KEY=…
 LLM_MODEL=openai/gpt-oss-20b
 ```
 
-Run Medic with `.env` loaded, e.g. `set -a && . ./.env && set +a`, so a stale
+Pin only models verified to emit **real tool calls** — a model that answers in
+prose despite a `tools` array is unusable for both the patient and the
+diagnosis. Among NaraRouter's free plan, `laguna-s-2.1`, `nemotron-3-ultra-free`
+and `agnes-2.5-flash` work; `jev` and `exo-stealh` reject the request outright.
+Check with:
+
+```bash
+.venv/bin/python scripts/smoke_tool_calling.py --models laguna-s-2.1 jev
+```
+
+Medic paces itself to **15 requests/minute** (`MEDIC_RATE_RPM`) because a heal
+issues a burst of calls and tripping the free-plan limit mid-heal leaves a
+half-written trace.
+
+Run Medic with `.env` loaded (`set -a && . ./.env && set +a`) so a stale
 `LLM_*` in the ambient environment cannot shadow it.
 
 ### Commands
 
 ```bash
 .venv/bin/python cli.py doctor                  # env + neatlogs doctor + LLM ping
-.venv/bin/python cli.py run --bug loop          # inject a bug, show the failing check
-.venv/bin/python cli.py heal --bug loop         # the full loop
-.venv/bin/python cli.py heal --bug loop --llm real --apply
+.venv/bin/python cli.py run  --bug loop                     # inject a bug, show the failing check
+.venv/bin/python cli.py run  --bug loop --llm scripted      # same, deterministic + offline
+.venv/bin/python cli.py heal --bug loop --llm real          # the full loop (needs a real LLM)
+.venv/bin/python cli.py heal --bug loop --llm real --apply  # ...and write the patch to medic.yaml
 .venv/bin/python cli.py report                  # measured before/after per bug
 .venv/bin/python cli.py reset                   # restore a clean medic.yaml
 ```

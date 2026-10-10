@@ -1,0 +1,55 @@
+{
+  "note": "Real model, temperature 0, fixtures only. No preset tuning: whatever the model did is recorded as-is.",
+  "model_note": "see .env LLM_MODEL",
+  "results": [
+    {
+      "bug": "loop",
+      "config": "clean",
+      "run_id": "fe18dd17a45c467c",
+      "neatlogs_trace_id": null,
+      "local_trace": "/home/ubuntu/medic/runs/fe18dd17a45c467c.json",
+      "passed": true,
+      "failure_type": null,
+      "reason": "answered in 3 steps (limit 8)",
+      "details": [],
+      "steps": 3,
+      "total_tokens": 4364,
+      "est_cost_usd": 0.017736,
+      "latency_ms": 23841.33,
+      "stopped_because": "final_answer",
+      "error": null,
+      "tools_used": [
+        "web_search",
+        "fetch_page",
+        "calculator"
+      ],
+      "answer": "The total cost for 250 standard widgets after the 12% volume discount is **$28,248.00**.\n\n**Calculation:**\n- Unit price: $128.40\n- Quantity: 250\n- Volume discount: 12% (for orders of 250+)\n- Total = 250 \u00d7 $128.40 \u00d7 (1 - 0.12) = $28,248.00",
+      "wall_clock_s": 23.84
+    },
+    {
+      "bug": "loop",
+      "config": "bug:loop",
+      "run_id": "b54c874d3f694da2",
+      "neatlogs_trace_id": null,
+      "local_trace": "/home/ubuntu/medic/runs/b54c874d3f694da2.json",
+      "passed": true,
+      "failure_type": null,
+      "reason": "answered in 4 steps (limit 8)",
+      "details": [],
+      "steps": 4,
+      "total_tokens": 5789,
+      "est_cost_usd": 0.022743,
+      "latency_ms": 69299.98,
+      "stopped_because": "final_answer",
+      "error": null,
+      "tools_used": [
+        "web_search",
+        "fetch_page",
+        "calculator",
+        "calculator"
+      ],
+      "answer": "Based on the Widget Corp price list (Q3), the standard widget unit price is **$128.40**, and bulk orders of 250 or more units receive a **12% volume discount**.\n\n**Calculation:**\n- 250 widgets \u00d7 $128.40 = $32,100.00 (before discount)\n- 12% discount = $32,100.00 \u00d7 0.88 = **$28,248.00**\n\n**Total cost ",
+      "wall_clock_s": 69.3
+    }
+  ]
+}
