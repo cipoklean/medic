@@ -34,15 +34,33 @@ and proves the fix with **hard, deterministic checks — including on held-out t
 
 ## 2. CURRENT STATUS
 
-**Phase 1 COMPLETE and verified by real execution.** Phases 2–5 not started.
+> **2026-10-10 08:00 WAT — fresh history created for the hackathon build window.**
+> One orphan-root commit `028ce04` (author `cipoklean <82593998+cipoklean@users.noreply.github.com>`,
+> no co-author trailers, no bot identity), then `1dd11c7`. Old `Medic Build` history deleted.
+> **Do not backdate anything** — the trace-based pitch depends on the history being real.
 
-| Phase | State |
-|---|---|
-| 1. Skeleton + env + patient agent + dual tracing | ✅ **verified by running** |
-| 2. Bug presets 1–3 + hard checks + tasks | ⬜ not started |
-| 3. diagnose / surgeon / verify / loop | ⬜ stubbed (raise NotImplementedError) |
-| 4. Bug 4 + Rich polish + report | ⬜ stubbed |
-| 5. README + backup demo | ⬜ |
+### addendum compliance (david's neatHack rules, 2026-10-10)
+
+| # | Requirement | State |
+|---|---|---|
+| 1 | Fresh history, commits in-window, `cipoklean` only | ✅ done — see above |
+| 2 | Entire CLI + `--agent <name>` | ⛔ **BLOCKED — needs david's decision** (Hermes unsupported) |
+| 2 | entire-graph installed, files committed | ✅ `entire plugin install graph` v0.4.0; `.entire/graph-agent.md` committed |
+| 2 | checkpoint ID + URL at each CHECKPOINT | ⛔ blocked on #2 enable |
+| 2 | Stretch: diagnosis cites the Entire checkpoint | ⛔ blocked on #2 enable |
+| 3 | `evidence/` folder | 🟡 scaffolded, empty (populated as bugs heal) |
+| 4 | Recovery traced in neatlogs | ⬜ Phase 2 (bug 2 retry path) |
+| 5 | `docs/business.md` | 🟡 scaffolded, filled Phase 5 with measured cost-per-heal |
+| 6 | README "Sponsor tools" | ⬜ Phase 5 |
+
+**⛔ BLOCKER — Entire cannot capture Hermes sessions natively.** `entire agent list` supports
+`antigravity, claude-code, codex, copilot-cli, cursor, factoryai-droid, opencode, pi`. Hermes is not
+among them, and `entire status` → `○ not set up`. Entire *does* document a supported escape hatch:
+an **Agent Integration Protocol** executable named `entire-agent-<name>` on `$PATH` plus
+`{"external_agents": true}` in `.entire/settings.json`. Writing one is real implementation work, and
+david said to flag rather than improvise. **Awaiting his call (see §9).**
+
+**Phase status:**
 
 **What works NOW (all by actual run, not by reading code):**
 - `python cli.py doctor` → env table, Python 3.13.15, `neatlogs doctor --local` PASS, LLM ping.
@@ -186,6 +204,42 @@ medic/
 
 ---
 
+---
+
+## 9. OPEN DECISION FOR DAVID (2026-10-10) — Entire + Hermes
+
+David's addendum says: *"Check entire agent list or the docs for whether your agent type is supported;
+if not, tell me before improvising."*
+
+**Finding — Hermes is NOT supported by Entire.** Live check, not docs-reading:
+
+```
+$ entire agent list
+    antigravity   claude-code   codex   copilot-cli
+    cursor        factoryai-droid   opencode   pi
+$ entire status
+  ○ not set up (run `entire enable` to get started)
+```
+
+Options, in the order I'd recommend them:
+
+- **(a) Write an `entire-agent-hermes` integration** — Entire's documented **Agent Integration
+  Protocol**. An executable named `entire-agent-hermes` on `$PATH` + `{"external_agents": true}` in
+  `.entire/settings.json`, then `entire enable --agent hermes`. This is the *supported* path and makes
+  the stretch goal (Medic's diagnosis citing the checkpoint that broke `medic.yaml`) genuinely work.
+  Cost: real work, and an unfamiliar protocol; it may need study before it captures anything.
+- **(b) Enable `claude-code`** and drive the build through Claude Code CLI for the checkpointed parts.
+  Fast and supported, but then Entire is capturing *Claude Code's* sessions, not mine — the trace
+  attribution is honest only if we say so plainly in the README.
+- **(c) Enable Entire with no agent** (`entire enable --yes`): git hooks + checkpoints still record
+  commits; only the *session* context (the prompt/reasoning behind a commit) is missing.
+
+**Recommendation:** (a) if the protocol proves tractable in ~30 min, else (b) for the duration with
+the README stating exactly which agent produced each checkpoint. Either way, do NOT fake it —
+the whole product claim is that traces and history are real.
+
+---
+
 ## 8. ACTIVITY LOG (append only — newest at the bottom)
 
 ### 2026-10-09 — Phase 1: skeleton, patient agent, dual tracing (verified)
@@ -200,7 +254,31 @@ medic/
 - Result: **works.** One real bug found by running: `PatientAgent` ignored its injected `llm` param and always
   constructed a live `OpenAI()` — fixed to honour injection (offline determinism depends on it). Researched the
   neatlogs docs and recorded the decisive fact: **ingest key ≠ read token.**
-- Next: David adds the keys to `.env` and we do one live clean run + read-path test (§3); then Phase 2 presets/checks/tasks.
+### 2026-10-10 08:00 WAT — neatHack addendum: fresh history + Entire integration (partial)
+- Did: (1) squashed the two pre-window commits into ONE orphan-root commit `028ce04`, authored
+  `cipoklean <82593998+cipoklean@users.noreply.github.com>`, dated 08:00:21 WAT — the exact minute the
+  build window opened. Deleted the `Medic Build` history and its co-author trailer. (2) Installed
+  Entire CLI 0.11.4 + `entire-graph` v0.4.0, ran `entire graph init-agents --repo .`, committed the
+  generated files. (3) Created `evidence/` and `docs/` placeholders. (4) Extended this file with an
+  addendum-compliance table and an OPEN DECISION section.
+- Files: AGENT.md (rewritten §2, new §9), AGENTS.md (new — entire-graph guide + pointer to AGENT.md),
+  CLAUDE.md (new), .entire/graph-agent.md (generated), evidence/README.md, docs/business.md.
+- Commands: `curl -fsSL https://entire.io/install.sh | bash` → Entire 0.11.4 (arm64);
+  `entire plugin install graph` → v0.4.0; `entire graph init-agents --repo .` → wrote
+  `.entire/graph-agent.md`, `AGENTS.md`, `CLAUDE.md`; `entire graph search --query "how does the
+  patient agent loop call a tool" --repo .` → correctly ranked `patient/agent.py:112-234 PatientAgent.run`;
+  `entire agent list` → 8 supported agents, Hermes absent; `entire status` → `○ not set up`.
+- Result: **partial, deliberately.** Items 1, 3, 5 of the addendum are landed or scaffolded.
+  **Item 2 is blocked and NOT improvised**: Hermes is not an Entire-supported agent, and the
+  documented escape hatch (an `entire-agent-<name>` executable per the Agent Integration Protocol) is
+  real implementation work that david asked to be flagged first. Awaiting his decision in §9.
+- **A near-miss worth remembering:** `entire graph init-agents` created a NEW `AGENTS.md` (plural) beside
+  our hand-written `AGENT.md` (singular). Two files one letter apart, one of them auto-generated, and a
+  future agent would plausibly read the wrong one and conclude the project had no status log. Both now
+  exist deliberately: `AGENTS.md` carries the graph guide and a loud pointer to `AGENT.md`; `AGENT.md`
+  remains the single source of truth. Check for this collision after ANY scaffolder runs.
+- Next: david's call on §9 → then `entire enable` → first checkpoint. Then the neatlogs keys and Bedrock
+  creds in `.env`, a live clean run, and Phase 2 (presets + hard checks + tasks).
 ### 2026-10-09 — CHECKPOINT 1 reported
 - Did: ran both neatlogs doctor modes for real; local PASS, probe CREDENTIAL_MISSING (expected, no key yet).
   Updated AGENT.md §2 with both results. No code change.
