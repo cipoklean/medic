@@ -190,12 +190,21 @@ def build_report(console: Console) -> None:
                        "PASS" if h.get("passed") else "FAIL")
         console.print(t3)
         if llm:
-            console.print(
-                f"[dim]Medic's own calls: {llm.get('total_tokens', '?')} tokens "
-                f"(diagnose + surgeon on {llm.get('model', '?')}); "
-                f"reasoning tokens {llm.get('reasoning_tokens', '?')}; "
-                f"token ceiling used {llm.get('max_tokens_budget', '?')}[/dim]"
-            )
+            own = llm.get("total_tokens")
+            if own is None:
+                # "None tokens" looks like a broken number. Say it was not
+                # captured instead of printing a placeholder that reads as data.
+                console.print(
+                    f"[dim]Medic's own calls: token usage was not captured for this "
+                    f"run ({llm.get('note', '')})[/dim]"
+                )
+            else:
+                console.print(
+                    f"[dim]Medic's own calls: {own} tokens "
+                    f"(diagnose + surgeon on {llm.get('model', '?')}); "
+                    f"reasoning tokens {llm.get('reasoning_tokens', '?')}; "
+                    f"token ceiling used {llm.get('max_tokens_budget', '?')}[/dim]"
+                )
         if before.get("neatlogs_trace_id"):
             console.print(
                 f"[dim cyan]before trace: "
