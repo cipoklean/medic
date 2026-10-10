@@ -1,75 +1,39 @@
 # Medic — X demo shot list (neatHack 2026)
 
-**Target: 2:45.** Sponsor use is scored — neatlogs, Entire and cfo.ai each appear
-by name on screen with something real to show.
-
-Every number below is measured and carries its evidence file. If a number is not
-on this list, do not say it.
+**Target: 2:45.** Three beats, in this order. Every number carries its evidence
+file; if a number is not on this list, do not say it.
 
 ---
 
-## BUDGET PLAN — read before you record
+## THE THREE BEATS
 
-**The take runs on `nara/laguna-s-2.1`** (free tier, 7M tokens/day). Groq left
-the chain on Oct 10 — see "Historical evidence" below. Measured costs:
-
-| Command | Tokens | Evidence |
+| # | Beat | Evidence |
 |---|---|---|
-| `cli.py doctor` | ~100 | — |
-| clean run (the hook) | ~5,000 | `repro_loop_strong_laguna.json` |
-| buggy run, `loop_strong` | **92,000–180,000** | `repro_loop_strong_laguna.json` |
-| — 37–38 of those steps are `web_search` | | |
-| rerun after the patch | measured in `real_heal_loop_loop_strong.json` | |
-| Medic diagnose + surgeon | measured, see the magenta panel | |
+| 1 | **Live** — `parse_error` healed on Bedrock nova-micro, Medic on Sonnet | `real_heal_loop_parse_error.json` |
+| 2 | **Recorded** — `loop` healed on Groq gpt-oss-20b, labelled "Groq, Oct 10" | `real_heal_loop.json` |
+| 3 | **Why hard checks matter** — a real model caught two wrong expectations a green suite hid; clean gate 39/39 | `gate_nova_micro_clean.json` |
 
-**A buggy run is 20–36× the cost of a healthy one** (~5,000 tokens). That ratio
-is the demo's second punchline, alongside the token saving.
+---
 
-NaraRouter's free tier is 7M tokens/day, so a take costs ~2% of it. Rehearse
-freely.
-
-### Commands that spend Groq tokens
-
-| # | Command | Spend | When |
-|---|---|---|---|
-| 1 | `cli.py doctor` | ~100 | pre-flight |
-| 2 | `cli.py run --bug loop_strong --llm real` | 90k–180k | **take only** |
-| 3 | `cli.py heal --bug loop_strong --llm real` | + patch + verify | **take only** |
-| 4 | `scripts/smoke_tool_calling.py` | ~50/model | never on a record day |
-
-**Rule: rehearse on `--llm scripted` (free, offline, deterministic). Run the
-real take ONCE, at the end.**
+## PRE-FLIGHT
 
 ```bash
-# REHEARSAL — costs nothing, run as often as you like
-.venv/bin/python cli.py run  --bug loop --llm scripted
-.venv/bin/python cli.py heal --bug loop --llm scripted   # reports "needs a key" — expected
-.venv/bin/python cli.py report
-
-# REAL TAKE — one pass
 set -a && . ./.env && set +a
-export LLM_PROVIDER_CHAIN=nara
-.venv/bin/python cli.py doctor
-.venv/bin/python cli.py run  --bug loop_strong --llm real
-.venv/bin/python cli.py heal --bug loop_strong --llm real
+export LLM_MODEL_LITELLM_PATIENT=nova-micro     # patient = nova-micro
+# medic stays claude-sonnet-4.6 (the role default)
+
+.venv/bin/python cli.py doctor                  # ~100 tokens
+.venv/bin/python cli.py report                  # free, offline
 ```
 
-### Backup take
+**One take costs ~$0.009** (measured: 16,938 tokens, patient $0.0012 + medic
+$0.0080). Rehearse as often as you like.
+
+**Check before recording** — a stale server makes every live check lie:
 
 ```bash
-export LLM_PROVIDER_CHAIN=nara
-LLM_MODEL_NARA=nemotron-3-ultra-free      # or agnes-2.5-flash
+ss -ltnp | grep :8000     # kill anything holding the port
 ```
-
-Both are verified tool-calling and verified on the full patient loop. Say which
-model served the run.
-
-**If NaraRouter is down:** scripted take, clearly labelled. A labelled
-deterministic run is honest; an improvised claim is not.
-
-**Do not rehearse on OpenRouter.** Its credit balance is low — a single run can
-return `402 insufficient credits`. Cost per take would be ~$0.003, but the
-balance is the constraint, not the price.
 
 ---
 
@@ -78,36 +42,29 @@ balance is the constraint, not the price.
 ### 0:00–0:10 — THE HOOK
 
 ```bash
-.venv/bin/python cli.py run --bug loop_strong --llm real
+.venv/bin/python cli.py run --bug parse_error --llm real
 ```
 
-**"Agents don't crash. They quietly go wrong. This agent asked one question. It
-used forty steps — its limit was eight — and burned over ninety thousand tokens
-looking for the same price."**
+**"Agents don't crash — they quietly go wrong. Actually, sometimes they do
+crash, and that's worse. This agent fetched a page, the tool returned malformed
+JSON, and the run simply died. No answer. No error anyone saw."**
 
-On screen: `[loop] used 40 steps, over the limit of 8` · trace ID.
+On screen: `[parse_error] run ended on an unhandled parse error: JSONDecodeError:
+Illegal trailing comma before end of object` · trace ID.
 
-**Say the provider out loud:** "That's `nara/laguna-s-2.1`."
-
-**If you must disclose the preset:** "I strengthened the prompt so it
-misbehaves on this model — it's labelled in the repo as `loop_strong`."
-
-### Historical evidence — only if asked
-
-Twelve steps / 23,136 tokens on `groq/openai/gpt-oss-20b`, **Oct 10**. Groq left
-the chain because its free tier allowed four takes a day. Say "Groq, Oct 10" and
-move on.
+**Say the provider:** "That's `nova-micro` on AWS Bedrock, through our LiteLLM
+gateway."
 
 ---
 
 ### 0:10–0:30 — neatlogs (SPONSOR 1)
 
-Open the dashboard. Show the span tree.
+Open the dashboard. Show the span tree, and point at the failing span.
 
 **"That's not a log line — a span tree. Every tool call, every token count, in
-order."**
+order. And there it is: `fetch_page`, red."**
 
-Then the read-back, which is the part judges don't expect:
+Then the read-back:
 
 ```bash
 curl -s -H "x-api-key: $NEATLOGS_API_KEY" \
@@ -115,77 +72,122 @@ curl -s -H "x-api-key: $NEATLOGS_API_KEY" \
 ```
 
 **"Medic reads this back through the API — not a screenshot. Every span, with
-parent IDs. And if neatlogs is down it falls back to a local file, so a heal
-never dies because a vendor is down."**
+parent IDs. If neatlogs is down it falls back to a local file, so a heal never
+dies because a vendor is down."**
 
-Sponsor word on camera: **neatlogs.** · evidence: `trace_clean_real_llm.json`
+Sponsor word: **neatlogs.** · evidence: `trace_clean_real_llm.json`
 
 ---
 
-### 0:30–1:00 — DIAGNOSIS AND DIFF
+### 0:30–1:05 — THE HEAL (BEAT 1, LIVE)
 
 ```bash
-.venv/bin/python cli.py heal --bug loop --llm real
+.venv/bin/python cli.py heal --bug parse_error --llm real
 ```
 
-**Diagnosis** (name the span): "It read the trace and named the broken step —
-`span ba760cf318f943b1`, confidence 0.92 — *'the system_prompt instructs the
-agent to keep searching until multiple independent confirmations are found.'*"
+**Diagnosis** — point at each field as it appears:
 
-**Diff** (one field): "It can only touch four fields in one file. It picked
-`system_prompt`. It did not touch Python. It did not touch the tools."
+**"It named the failing span. `failure_type: parse_error`. Confidence 0.95. And
+the evidence — it quoted the error verbatim out of the trace. Nobody told it what
+the bug was."**
 
-**Medic's own trace** (magenta panel): "Those are Medic's own calls — the
-diagnosis and the patch. Measured, not estimated."
+**Diff** — one line:
 
-**Say the provider:** "Medic's own reasoning also runs on
-`groq/openai/gpt-oss-20b`."
+```diff
+-retry_on_parse_error: false
++retry_on_parse_error: true
+```
+
+**"It can only touch four fields in one file. It picked one boolean. It did not
+touch Python. It did not touch the tools."**
+
+**Medic's own trace** (magenta panel):
+
+**"Those are Medic's own calls — the diagnosis and the patch. 1,392 tokens in,
+204 out. Measured, not estimated."**
+
+**Say the provider:** "Medic reasoned on `claude-sonnet-4.6`, also on Bedrock."
+
+**Rerun + held-out:**
+
+**"The train task it was given — three steps, and it answers. And these two
+tasks it has never seen. New questions. It passes both."**
+
+**Cost, on screen:**
+
+| | tokens | cost |
+|---|---|---|
+| Medic on Sonnet | 1,596 | $0.0080 |
+| Patient on nova-micro | 15,342 | $0.0012 |
+| **Total** | **16,938** | **$0.0091** |
+
+**"Nine tenths of a cent. And the medic is 87% of that — the reasoning is the
+product, not the patient runs."**
 
 ---
 
-### 1:00–1:20 — APPROVAL AND THE RERUN
+### 1:05–1:25 — RECORDED HEAL (BEAT 2)
 
-**"The patch is applied to a copy. It only reaches `medic.yaml` after the checks
-pass. Watch the train task it was given—"**
+Show `evidence/real_heal_loop.json`. Say the label out loud.
 
-Verification table, first row: **"—six steps. Was twelve."**
+**"A second bug class, healed on a different model. This is `loop` — the agent
+kept searching past its step limit. Twelve steps failing, six passing, two
+held-out tasks passing."**
 
-Then the two rows that matter:
+**"This ran on Groq's `gpt-oss-20b`, on the tenth of October. Groq left the
+chain — its free tier is 200,000 tokens a day and one take costs forty thousand,
+so you get four takes and no room to rehearse. The evidence is kept and labelled
+by date."**
 
-**"And these two tasks it has never seen. It saw exactly one failing task. These
-are new questions. It passes both."**
-
-If the heal needs more than one attempt, **keep rolling and say so**: "It's
-attempt two — the first patch didn't generalise. That's the held-out set doing
-its job."
+evidence: `real_heal_loop.json`
 
 ---
 
-### 1:20–1:45 — CAPABILITY MATRIX (the beat that makes it a product)
+### 1:25–1:50 — WHY HARD CHECKS MATTER (BEAT 3)
+
+**"Here's what I didn't expect. We gated the whole thing first — clean config,
+thirteen tasks, three runs each. Thirty-nine runs. It failed four of them."**
+
+**"And three of those four failures were OUR harness, not the model."**
+
+On screen, the three:
+
+* `parse-error-gadgets` expected **$10.00** for `$169.98 − $79.99`. The answer is
+  **$89.99**. The scripted LLM returned `169.98-(79.99*2)` to match it — both
+  halves of the test agreed, and both were wrong.
+* The search snippets **leaked every answer**, so the agent never fetched the
+  page — and a bug living inside `fetch_page` could never fire.
+* The citation rule was never stated in the config, then the model was failed
+  for not following it.
+
+**"A green suite hid an arithmetic error for as long as it ran. A real model
+caught it in nine runs. So every expected answer is now re-derived from its own
+fixture — and that test caught a second wrong expectation the first time it
+ran."**
+
+**Clean gate, 39/39:**
+`evidence/gate_nova_micro_clean.json`
+
+---
+
+### 1:50–2:05 — CAPABILITY MATRIX
 
 | Route | clean | same buggy prompt |
 |---|---|---|
-| `groq/openai/gpt-oss-20b` — Groq direct, Oct 10 | PASS 4 | **FAIL 12 steps** |
-| `openai/gpt-oss-20b` — same weights, OpenRouter routed to Groq | PASS 4 | PASS 7 steps |
+| `groq/gpt-oss-20b` — direct, Oct 10 | PASS 4 | **FAIL 12 steps** |
+| `gpt-oss-20b` — OpenRouter pinned to Groq | PASS 4 | PASS 7 steps |
 | `nara/laguna-s-2.1` | PASS 3–5 | PASS 4 steps |
-| `nara/nemotron-3-ultra-free` | PASS 3 | PASS 4 steps |
-| `nara/agnes-2.5-flash` | PASS 4 | PASS 5 steps |
-| `nara/laguna-s-2.1` — **strengthened preset** | PASS 4–5 | **FAIL 40 steps** |
+| `nova-micro` — Bedrock | PASS 3/3 | PASS 3/3 |
 
-**"Same prompt. Same question. Same weights — routed to the same upstream — and
-two different outcomes. Twelve steps on one route, seven on another. Nobody
-catches that by re-reading the prompt. Medic's job is to catch the
-model-specific failure in the trace."**
+**"Same prompt. Same question. Same weights — routed to the same upstream. Twelve
+steps on one route, seven on another. The route is part of the system under test.
+Nobody catches that by re-reading the prompt."**
 
 evidence: `loop_capability_matrix.json`
 
-**Optional, if time:** "And when the prompt is strengthened enough, the
-well-behaved model breaks too — 40 steps, 38 of them searches."
-
-
 ---
 
-### 1:45–2:15 — Entire (SPONSOR 2)
+### 2:05–2:25 — Entire (SPONSOR 2)
 
 ```bash
 entire checkpoint list
@@ -193,41 +195,38 @@ entire checkpoint explain 01M4JB59S0C8NN6N28S7F24EYW --short
 entire graph search --query "how does the patient agent loop call a tool" --repo . --top-k 3
 ```
 
-**"Every commit is a checkpoint — the diff plus the session behind it. And Hermes
-isn't one of Entire's eight supported agents. So we wrote an integration for it."**
+**"Every commit is a checkpoint — the diff plus the session behind it. Hermes
+isn't one of Entire's eight supported agents, so we wrote an integration for it.
+It reads real session data out of SQLite, read-only."**
 
-Show `tools/entire-agent-hermes`:
-
-**"It reads real session data out of SQLite, read-only, and reports true token
-counts."**
-
-Cut to `entire graph search` returning `PatientAgent.run`.
+Show `tools/entire-agent-hermes`. Cut to `entire graph search` returning
+`PatientAgent.run`.
 
 Sponsor word: **Entire.** · checkpoint: `01M4JB59S0C8NN6N28S7F24EYW`
 
 ---
 
-### 2:15–2:35 — cfo.ai (SPONSOR 3)
+### 2:25–2:40 — cfo.ai (SPONSOR 3)
 
 Open `docs/business.md`.
 
-**"The business model is in cfo.ai, built from these runs — not from
-assumptions."**
+**"The model is in cfo.ai, built from these runs — not from assumptions."**
 
 Point at the table:
 
-* **30,760 tokens** per heal → **$0.113** at our rate table
-* **51% fewer tokens** after the patch (15,478 → 7,587) — measured on a task the
-  patch never saw
-* **6 heals/day** on a free tier — the real constraint
+* **$0.0091 per heal**, measured, no estimates
+* **87% is the medic's reasoning** — that's the priced product
+* **107× spread** between nova-micro and Sonnet as the medic → three tiers fall
+  out of it: auto-heal cheap, escalate on low confidence
+* **30× a healthy run** ($0.0091 vs $0.0003) — compare against a human noticing
 
-**"Medic doesn't just stop the failure. It makes the agent cheaper."**
+**"And the medic model is a dial, not a fixed cost."**
 
 Sponsor word: **cfo.ai.**
 
 ---
 
-### 2:35–2:45 — CLOSE
+### 2:40–2:45 — CLOSE
 
 **"Point Medic at your agent's config and your own hard checks. The model
 proposes. The checks decide. Built on neatlogs, with an Entire integration we had
@@ -239,28 +238,30 @@ to write ourselves."**
 
 | Symptom | Do this |
 |---|---|
-| NaraRouter 429 | Switch model to `nemotron-3-ultra-free`, **say** which model. Both reproduce with `loop_strong`. |
-| NaraRouter down | Scripted take. **Label it scripted.** |
-| Heal takes 3 attempts | **Keep going.** That's the product. |
-| Bug doesn't reproduce | It reproduced 2/2 with `loop_strong`. If it still doesn't, the matrix is your beat: "four routes, one prompt, different outcomes" is true and still the point. |
-| Diff panel wraps badly | Zoom out, or skip to the verification table — the numbers are the payload. |
+| Gateway 429 | Wait — the limiter backs off. Don't switch mid-take. |
+| 402 insufficient credits | Stop. That's a balance problem, not a demo problem. |
+| Heal takes 2 attempts | **Keep going.** Say "attempt two — the first patch didn't generalise." |
+| Bug doesn't reproduce | It reproduced 3/3. If it still doesn't, use the gate as the beat: "39 clean runs, 0 misses." |
+| Diff panel wraps | Zoom out, or skip to the cost table — the numbers are the payload. |
 
 ## DO NOT SAY
 
-* Bugs 1, 2, 4 reproduce on a real model — **they don't.** None was tuned to.
-* A real model at temperature 0 is deterministic — measured 3 steps then 4.
-* "Medic heals everything" — one heal, one model, one host.
+* `wrong_args` or `loop` reproduce on Nova — **they don't**, and the reasons are
+  in the README.
+* A temperature-0 run is deterministic — measured 3 steps then 4.
+* "Medic heals everything" — one heal, one bug class, one host.
 * Any number not in this document.
+* Any estimate. The cost table has none.
 
 ## Assets
 
 | File | What it proves |
 |---|---|
-| `evidence/real_heal_loop.json` | the real heal, before/after, held-out included |
-| `evidence/loop_capability_matrix.json` | 5 rows, 4 routes, 1 prompt |
-| `evidence/repro_loop_strong_laguna.json` | the strengthened preset, 2/2 reproducible |
-| `evidence/repro_openrouter_via_groq.json` | same weights, different route, different outcome |
-| `evidence/recovery_parse_error.json` | recovery from a failed tool call |
-| `evidence/trace_clean_real_llm.json` | a real traced run, readable back |
-| `evidence/tool_calling_free_plan.json` | which models actually call tools |
-| `docs/business.md` | cost per heal, the 51% saving, runway |
+| `evidence/real_heal_loop_parse_error.json` | the live heal, train + held-out + control |
+| `evidence/repro_parse_error_nova_micro.json` | 3/3 reproduction, `parse_err_seen=True` |
+| `evidence/gate_nova_micro_clean.json` | 39/39 clean passes |
+| `evidence/gateway_pricing.json` | the real rate card |
+| `evidence/real_heal_loop.json` | loop heal, "Groq, Oct 10" |
+| `evidence/loop_capability_matrix.json` | 5 routes, 1 prompt |
+| `evidence/gateway_tool_calling_smoke.json` | all 7 gateway models verified |
+| `docs/business.md` | cost per heal, the model dial, runway |

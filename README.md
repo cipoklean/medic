@@ -86,7 +86,48 @@ Stopping on the train task alone is how a self-healing tool learns to overfit.
 Every number below was produced by a real run and read back from that run's own
 recorder. None is estimated.
 
-### A real model, healed by a real model — bug 3 (`loop`)
+### The live heal — bug 2 (`parse_error`), Bedrock nova-micro + Sonnet
+
+Patient: `litellm:nova-micro` (Amazon Nova on Bedrock).
+Medic: `litellm:claude-sonnet-4.6` (Anthropic on Bedrock).
+
+| | steps | tokens | result |
+|---|---|---|---|
+| before (buggy preset) | 2 | 2,020 | **FAIL** — `JSONDecodeError: Illegal trailing comma` |
+| after — train `parse-error-solar` | 3 | 4,721 | PASS |
+| after — held-out `parse-error-gadgets` | 1 | 1,950 | PASS |
+| after — held-out `parse-error-widgets` | 1 | 1,910 | PASS |
+| clean-config control | 3 | 4,707 | PASS |
+
+Reproduced **3/3** on the train task, with `parse_err_seen=True` in every run and
+the failing span on `fetch_page` in the trace.
+
+Medic diagnosed it **from the trace, with no hint**: `failing_span_id` named,
+`failure_type: parse_error`, **confidence 0.95**, and the evidence quoted
+verbatim — *"ERROR JSONDecodeError: Illegal trailing comma before end of object:
+line 1 column 279 (char 278)"*. The patch was **one field, one boolean**:
+
+```diff
+-retry_on_parse_error: false
++retry_on_parse_error: true
+```
+
+Both held-out tasks passed. Full record:
+[`evidence/real_heal_loop_parse_error.json`](evidence/real_heal_loop_parse_error.json).
+
+**Cost per heal, measured:**
+
+| | tokens | cost |
+|---|---|---|
+| Medic on Sonnet | 1,392 in + 204 out | **$0.007960** |
+| Patient on nova-micro | 15,342 | **$0.001181** |
+| **Total** | **16,938** | **$0.009141** |
+
+The patient costs 13% of the heal; the medic's reasoning is the rest. Running the
+medic on `claude-haiku` instead drops its share to **$0.002653** — a 3× saving
+for a weaker diagnosis.
+
+### Recorded, not live — bug 3 (`loop`), Groq gpt-oss-20b, Oct 10
 
 `openai/gpt-oss-20b` (Groq), temperature 0, fixtures only:
 
@@ -97,99 +138,97 @@ recorder. None is estimated.
 | after — held-out `loop-solar` | 5 | 4,872 | PASS |
 | after — held-out `loop-gadgets` | 3 | 2,823 | PASS |
 
-The model read the trace, diagnosed it at **confidence 0.92** — *"The
-system_prompt instructs the agent to keep searching until multiple independent
-confirmations are found, causing it to exceed the step limit"* — and patched
-`system_prompt` with an explicit stop rule. The two held-out tasks were never
-shown to diagnose or surgeon.
+Diagnosed at **confidence 0.92** and patched with an explicit stop rule.
+Record:
+[`evidence/real_heal_loop.json`](evidence/real_heal_loop.json).
 
-Full record: [`evidence/real_heal_loop.json`](evidence/real_heal_loop.json).
+**Labelled "Groq, Oct 10".** Groq left the provider chain because its free tier
+is 200,000 tokens/day and one take costs ~36–46k — four takes, no room to
+rehearse. The evidence is kept so the run stays reproducible.
 
-### Disclosure: the demo preset was strengthened
+### The clean gate — 39/39
 
-The live take runs `bugs/presets/loop_strong.yaml` on `nara/laguna-s-2.1`.
-**That preset was deliberately strengthened** so a well-behaved model would
-misbehave — the original `loop.yaml` does not reproduce on it. It reproduced
-**2 of 2 runs**, at 40 steps (37–38 of them `web_search`).
+`medic.yaml` unmodified, `nova-micro`, **all 13 tasks × 3 runs = 39 passes, 0
+misses**:
+[`evidence/gate_nova_micro_clean.json`](evidence/gate_nova_micro_clean.json).
 
-`bugs/presets/loop.yaml` is unchanged, and so are the rows in
-`evidence/loop_capability_matrix.json` that record the original preset's
-results. Both presets are in the repo so the difference is inspectable, and any
-number from `loop_strong` is labelled as a strengthened preset rather than
-passed off as a naturally discovered failure.
+This is the footing every claim above stands on. It failed 4/13 the first time,
+and **three of those four failures were the harness, not the model** — a wrong
+expectation, a fixture the search could not reach, and a citation format the
+config never specified. None would have surfaced without running a real model
+against the clean baseline.
+
+### Disclosure: `loop_strong` is a strengthened preset
+
+The `laguna-s-2.1` run uses `bugs/presets/loop_strong.yaml`, **deliberately
+strengthened** so a well-behaved model misbehaves (2/2, 40 steps). The original
+`loop.yaml` does not reproduce on that model. Both presets are in the repo so
+the difference is inspectable, and any number from `loop_strong` is labelled as
+a strengthened preset rather than a discovered failure.
 
 ### The same buggy prompt breaks one model and not three others
 
-This is the sharpest thing we measured, and it is a 10-second beat in the demo:
+A 10-second beat in the demo:
 
-| Model | clean | same buggy prompt | reproduces? |
-|---|---|---|---|
-| `groq/openai/gpt-oss-20b` | PASS, 4 steps | **FAIL, 12 steps** (limit 8) | **yes** |
-| `nara/laguna-s-2.1` | PASS, 3 steps | PASS, 4 steps | no |
-| `nara/nemotron-3-ultra-free` | PASS, 3 steps | PASS, 4 steps | no |
-| `nara/agnes-2.5-flash` | PASS, 4 steps | PASS, 5 steps | no |
-| `openrouter/openai/gpt-oss-20b` (pinned to Groq) | PASS, 4 steps | PASS, 7 steps | no |
+| Route | clean | same buggy prompt |
+|---|---|---|
+| `groq/gpt-oss-20b` — direct, Oct 10 | PASS 4 steps | **FAIL 12 steps** |
+| `gpt-oss-20b` — OpenRouter pinned to Groq | PASS 4 | PASS 7 steps |
+| `nara/laguna-s-2.1` | PASS 3–5 | PASS 4 steps |
+| `nara/nemotron-3-ultra-free` | PASS 3 | PASS 4 steps |
+| `nara/agnes-2.5-flash` | PASS 4 | PASS 5 steps |
+| `nara/laguna-s-2.1` — **strengthened preset** | PASS 4–5 | **FAIL 40 steps** |
 
-Identical prompt, identical task, identical fixtures. The buggy prompt costs
-every model one extra search — the budget pressure is visible in the tokens —
-but only `gpt-oss-20b` runs away.
-
-**Medic's job is to catch the model-specific failure in the trace.** That is the
-case nobody spots by re-reading the prompt: it looks fine, and it is fine, on
-the three models where it is fine.
-
-The strongest row is the last one: `gpt-oss-20b` reached through OpenRouter
-with routing **pinned to Groq** — same weights, same upstream, verified by the
-provider's own `served provider: Groq` — runs 7 steps and passes, where Groq
-direct ran 12 and failed. **The route is part of the system under test.** That is
-the argument for reading the trace instead of judging the config. Full data:
+Full data:
 [`evidence/loop_capability_matrix.json`](evidence/loop_capability_matrix.json).
-
-When the prompt is strengthened enough, the well-behaved model breaks too:
-`nara/laguna-s-2.1` at 40 steps, 2 of 2 runs. That is the preset the demo uses,
-and it is disclosed above.
-
-### Bug reproduction, other bugs
-
-| Bug | model | clean | buggy | reproduces? |
-|---|---|---|---|---|
-| 2 · malformed JSON | `laguna-s-2.1` | PASS | PASS | **no** — the model avoided the broken payload even with retry disabled |
-| 4 · hallucinated citations | `laguna-s-2.1` | PASS | PASS | **no** — every URL it cited had actually been fetched |
-
-Neither was tuned to fail. Both are demonstrated with the deterministic scripted
-agent instead, which is what they are for.
-
-### Recovery from a failed tool call (bug 2)
-
-One config boolean, `retry_on_parse_error: false → true`:
-
-| | steps | tokens | outcome |
-|---|---|---|---|
-| before | 2 | 310 | died with `JSONDecodeError` |
-| after | 3 | 620 | recovered, answered 5,000.00 |
-
-Record: [`evidence/recovery_parse_error.json`](evidence/recovery_parse_error.json).
-
----
 
 ## Honest limits
 
-* **Bugs 1, 2 and 4 are demonstrated with the deterministic scripted agent**,
-  not a real model. None reproduced on `gpt-oss-20b` or `laguna-s-2.1`: a
-  capable model reads the JSON schema rather than a vague prose description
-  (bug 1), avoids a malformed payload even with retry disabled (bug 2), and
-  cites only URLs it actually fetched (bug 4). None was tuned to fail. The
-  bugs are real for weaker agents and for the scripted agent.
-* **A real-model heal is demonstrated for `loop`, on `gpt-oss-20b` only.** It is
-  the one model measured that genuinely fails, and the demo therefore runs on
-  it.
-* **A real model at temperature 0 is NOT bit-identical across runs.** Measured:
-  two runs of the identical clean config on `laguna-s-2.1` took 3 steps and 4
-  steps. Hosted providers vary by routing and load, not by sampling. So every
-  real-model figure in this repo is an observation from a small number of runs,
-  not a constant. **The scripted agent is deterministic**, which is why it
-  backs the tests and the backup demo.
-* **Cost figures use the rate table in `patient/tracing.py`**, not a provider
+**Which bugs reproduce on which model — measured, not assumed:**
+
+| Bug | `groq/gpt-oss-20b` | `nova-micro` (Bedrock) | `nova-lite` | `laguna-s-2.1` |
+|---|---|---|---|---|
+| `loop` | **FAIL 12 steps** | PASS | PASS | PASS (needs `loop_strong`) |
+| `wrong_args` | FAIL | **PASS 3/3** | PASS | PASS |
+| `parse_error` | — | **FAIL 3/3, train** | PASS | — |
+| `hallucinated_citation` | — | PASS | PASS | PASS |
+
+* **`parse_error` is the live heal.** It reproduces 3/3 on `nova-micro` and Medic
+  heals it in one attempt. It is the strongest case because it is a **config
+  defect, not a tuned prompt**: `retry_on_parse_error: false` plus a tool that
+  returns malformed JSON. Teams ship exactly that, and the fix is one boolean.
+* **`wrong_args` does NOT reproduce on Nova, and the reason is structural.** The
+  preset only weakens the tool *description*; the JSON schema still declares
+  `expression` as required, and nova-micro reads the schema and complies. The
+  bug needs a model that leans on the description more than the schema.
+* **`loop` was healed on `groq/gpt-oss-20b` — recorded evidence, Oct 10.** Groq
+  left the provider chain: its free tier is 200,000 tokens/day and one take
+  costs ~36–46k, which is four takes with no room to rehearse. The evidence is
+  kept and labelled by date; it is not a live take.
+* **`loop_strong` is a DELIBERATELY STRENGTHENED preset** so `laguna-s-2.1`
+  reproduces (2/2, 40 steps). The original `loop.yaml` does not reproduce on
+  that model. Any number from `loop_strong` is labelled as a strengthened
+  preset, not a discovered failure.
+* **The same weights routed to the same upstream behave differently.**
+  `gpt-oss-20b` via Groq direct: 12 steps, FAIL. The identical model via
+  OpenRouter with routing pinned to Groq (`allow_fallbacks=false`, verified
+  `served provider: Groq`): 7 steps, PASS. **The route is part of the system
+  under test.**
+* **A real model at temperature 0 is NOT bit-identical across runs.** Two runs of
+  the identical clean config on `laguna-s-2.1` took 3 and 4 steps. Every
+  real-model figure here is an observation from a small number of runs. **The
+  scripted agent is deterministic**, which is why it backs the tests.
+* **Two task expectations were arithmetically wrong and a green suite hid both.**
+  `parse-error-gadgets` expected `$10.00` for `169.98 − 79.99`; the answer is
+  `$89.99`, and the scripted LLM returned `169.98-(79.99*2)` to match it. Both
+  halves of the test agreed with each other and were both wrong. Every
+  `expected_answer` is now re-derived from its fixture by
+  `tests/test_expectations.py`, which caught a second error on its first run.
+* **The search snippets used to leak the answers**, which made `fetch_page`
+  optional and meant a bug living inside `fetch_page` could never fire. That is
+  why `parse_error` first showed 0/9 with `parse_err_seen=False`. Snippets now
+  carry no answer figures, and a test enforces it.
+* * **Cost figures use the rate table in `patient/tracing.py`**, not a provider
   invoice.
 * The offline suites prove the *machinery* — patch allowlist, verification,
   trace fallback. `tests/test_heal_machinery.py` calls

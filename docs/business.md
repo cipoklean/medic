@@ -50,64 +50,82 @@ Free-tier metering that keeps it free: a heal is ~30k tokens (measured, below),
 so a hosted team of 20 running constant heals is only ~$10–15/month of inference
 at current rates. The margin is in the verification and history, not the tokens.
 
-## 4. Cost per heal — MEASURED
+## 4. Cost per heal — MEASURED, no estimates
 
-From `evidence/real_heal_loop.json` (bug `loop`, `groq/openai/gpt-oss-20b`, temperature 0):
+From `evidence/real_heal_loop_parse_error.json` — the **live** heal. Patient
+`litellm:nova-micro`, Medic `litellm:claude-sonnet-4.6`, both on AWS Bedrock.
 
-| Component | Steps | Tokens | Cost @ rate table |
+| Component | Steps | Tokens | Cost (provider rate card) |
 |---|---|---|---|
-| Patient run, before (fails) | 10 | 15,478 | $0.0568 |
-| Patient run, after — train | 6 | 7,587 | — |
-| Patient run, after — held-out ×2 | 5 + 3 | 7,695 | — |
-| **Patient total per heal** | | **30,760** | **~$0.113** |
-| Medic's own diagnose + surgeon | | **not captured** by that run — see below | |
+| Patient run, before (fails) | 2 | 2,020 | $0.000155 |
+| Patient run, after — train | 3 | 4,721 | $0.000363 |
+| Patient run, after — held-out ×2 | 1 + 1 | 3,860 | $0.000297 |
+| Patient run, clean control | 3 | 4,707 | $0.000362 |
+| **Patient total per heal** | | **15,342** | **$0.001181** |
+| **Medic's own diagnose + surgeon** | | **1,596** (1,392 in + 204 out) | **$0.007960** |
+| **TOTAL PER HEAL** | | **16,938** | **$0.009141** |
 
-Cost at our rate table (`patient/tracing.py`: $3/M input, $15/M output):
+Every figure is read from the run's own recorder and the gateway's own rate
+card (`evidence/gateway_pricing.json`). **No estimate appears in this table.**
 
-* before-run alone: **$0.0568**
-* full heal, patient runs only: **~$0.113**
+### Where the cost actually sits
+
+| Role | Model | Share of heal cost |
+|---|---|---|
+| Medic | claude-sonnet-4.6 | **87%** |
+| Patient | nova-micro | 13% |
+
+**The repair reasoning is the product; the patient runs are incidental.** That
+is the line item a hosted service prices against, and it is the one that scales
+with how good the diagnosis needs to be.
+
+### Medic model choice, measured
+
+| Medic model | In $/Mtok | Out $/Mtok | Cost per heal (medic share) |
+|---|---|---|---|
+| claude-sonnet-4.6 | $3.30 | $16.50 | **$0.007960** |
+| claude-haiku | $1.10 | $5.50 | **$0.002653** |
+| nova-micro | $0.035 | $0.14 | **$0.000074** |
+
+A three-tier product falls straight out of this: **auto-heal on the cheap model,
+escalate to Sonnet when the confidence is low.** Measured spread is 107× between
+the cheapest and most expensive medic.
 
 ### Healthy-run cost, for comparison (clean config, no bug)
 
 | Model | Provider | Steps | Tokens | Cost |
 |---|---|---|---|---|
+| nova-micro | litellm / Bedrock | 2–3 | 2,020–4,707 | $0.00016–0.00036 |
 | laguna-s-2.1 | nara | 2 | 1,374–2,235 | $0.006–0.009 |
 | nemotron-3-ultra-free | nara | 3 | 4,364 | $0.0177 |
-| agnes-2.5-flash | nara | 4 | 5,898 | $0.0243 |
 
-A healthy agent run is **$0.006–0.024**. The loop bug turned a ~$0.011 run into
-a $0.057 run — roughly **5× the cost of doing nothing** — before any repair.
+A healthy run on nova-micro costs **~$0.0003**. A heal costs **$0.0091** — about
+**30× a healthy run**, and that is the number a buyer compares against the cost
+of a human noticing the failure at all.
 
-### The savings argument — the strongest number here
+### The savings argument
 
-| | Steps | Tokens |
-|---|---|---|
-| Buggy run, train task | 10 | 15,478 |
-| Same task after the patch | 6 | 7,587 |
-| **Reduction** | **40%** | **51%** |
+For `parse_error` the token reduction is not the story — the buggy run *crashed*
+at 2 steps, so it was cheap. The saving is different and worth stating precisely:
 
-Medic does not only stop the failure — it removes roughly half the token spend
-on that task. A team paying per-token for inference gets the repair **and** a
-cheaper steady state. That is the number to lead a sales conversation with, and
-it is measured on a task the patch never saw.
+* **before:** the agent produced **no answer at all**. A tool returned malformed
+  JSON and the run died.
+* **after:** the agent completes and answers correctly, on both held-out tasks.
 
-**Honest gaps in this number:**
+So this bug's value is **availability, not efficiency**. The token-saving
+argument belongs to the recorded `loop` heal, where the same task went from
+15,478 tokens to 7,587 — a measured **51% reduction** on a task the patch never
+saw. Both claims are real; they attach to different bugs.
 
-* Medic's own diagnose and surgeon tokens were **not captured** in the run that
-  produced the evidence — the CLI did not print them. Adding a diagnosis over a
-  15-span trace plus a patch is plausibly 5–15k tokens (that span tree is the bulk
-  of the prompt), so a realistic full-heal figure is **$0.13–$0.17**. This is an
-  **estimate** and is labelled as one.
-* gpt-oss-20b is a small hosted model. A frontier model would be materially more
-  per heal, probably 5–15× — which is why per-healed-trace pricing scales
-  naturally with model choice.
-* The rate table is ours, not a provider invoice.
+### Provider constraint worth pricing against
 
-**Provider constraint worth pricing against:** Groq's free tier is
-**200,000 tokens/day**. At ~30k tokens per heal that is **~6 heals/day** on the
-free tier — measured, not theoretical. A hosted product would use a paid tier or a
-smaller model; the free CLI keeps provider keys with the user precisely so this
-cost stays with them.
+* **Groq free tier: 200,000 tokens/day.** At ~36–46k per `loop` take that is
+  **~4 takes/day** — measured, which is why Groq left the chain.
+* **The LiteLLM gateway reports no `cost` field in its usage object.** Figures
+  here come from its `/model/info` endpoint, which exposes real per-token rates.
+  Worth knowing before anyone tries to reconcile against an invoice.
+* **Nova caps completion at 10,000 tokens** and Bedrock rejects `seed` outright.
+  Both were found by hitting them, and both are now handled rather than fatal.
 
 ## 5. Unit economics sketch (illustrative, not measured)
 
