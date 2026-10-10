@@ -1,0 +1,131 @@
+# BUILD PROMPT: Medic — the self-healing agent (neatHack 2026)
+
+You are my senior engineer. We are building Medic for neatHack (hosted by neatlogs). Build it in phases, commit after every phase, and stop at each CHECKPOINT to report what works, what failed, and what you'll do next. Do not skip ahead. Prefer simple, boring, working code over clever code.
+
+## 0. The pitch (keep this in mind for every decision)
+"Agents don't crash — they quietly go wrong. Medic reads a failing agent's neatlogs trace, finds the broken step, patches the agent's config, re-runs it, and proves the fix with hard checks — including on tasks it never saw."
+
+Hard deadline: demo video posted on X by Mon Oct 12, 2026, 2:30–7:25 PM WAT (7:00–11:55 PM IST). Backup demo video recorded Sunday night.
+
+## 1. Non-negotiable rules
+1. Python 3.11+ (neatlogs needs ≥3.10, <3.14). Use uv or pip + requirements.txt.
+2. No Streamlit. UI = a polished terminal CLI using Rich (live panels, colored diffs, spinners, streamed steps). Optional later: one FastAPI page that streams steps over SSE to plain HTML. Never Streamlit.
+3. **Medic only edits one file: medic.yaml** (system prompt, tool descriptions, max_steps, retry flag). It never edits Python code."Green" means hard, non-LLM checks pass.s.** An LLM opinion is never the verdict.Deterministic runs.s.** temperature=0, fixed seed where supported, and tools run agaicached/mocked fixtureses**, not the live web.Every number we show is measureded**, reported per bug (tokens, steps, cost, pass/fail). No made-up percentages.
+7. **Secrets only in .env** (gitignored). Ship .env.example.
+8. Stream every step to the screen — no dead air while the LLM thinks.
+
+## 2. Stack
+- neatlogs Python SDK (pip install -U "neatlogs[openai]"). Docs: https://docs.neatlogs.com/sdk/python
+- LLM: OpenAI-compatible client, configurable via env (LLM_BASE_URL, LLM_API_KEY, LLM_MODEL) so I can switch between OpenAI, OpenRouter or AWS Bedrock (hackathon AWS credits). Wrap the client with neatlogs.wrap(...).
+- rich, pyyaml, pydantic (schemas), jsonschema, typer (CLI), httpx.
+
+### neatlogs facts (from their docs — follow exactly)
+- Call neatlogs.init(api_key=os.environ["NEATLOGS_API_KEY"], workflow_name="patient-agent") **before** importing/constructing instrumented libraries; or use neatlogs.wrap(OpenAI()).
+- Root each run with @neatlogs.span(kind="WORKFLOW"); agent loop @neatlogs.span(kind="AGENT"); each tool @neatlogs.span(kind="TOOL", tool_name="...").
+- Scripts must call neatlogs.flush() then neatlogs.shutdown() at exit.
+- Tag runs with tags=[...] / wrap(..., bug="loop", attempt="2") kwargs so before/after runs are findable.
+- Sanity check: python -m neatlogs doctor --local --json, then python -m neatlogs doctor --probe --json (the probe exports a trace via POST /v1/traces and reads it back via GET /api/traces/v3/:traceId).
+
+## 3. Repo layout
+`
+medic/
+  README.md
+  .env.example
+  requirements.txt
+  medic.yaml                 # the ONLY file Medic patches
+  fixtures/                  # cached search results + pages (deterministic)
+    search/*.json
+    pages/*.html|.txt
+  tasks/
+    train.yaml               # the task Medic fixes on, per bug
+    heldout.yaml             # 2–3 unseen tasks per bug
+  patient/
+    agent.py                 # the agent being healed
+    tools.py                 # web_search, fetch_page, calculator (fixture-backed)
+    tracing.py               # neatlogs init + local JSON span recorder
+  bugs/
+    inject.py                # applies a bug preset to medic.yaml
+    presets/*.yaml
+  checks/
+    checks.py                # hard pass/fail checks per bug
+  medic/
+    trace_source.py          # load trace: neatlogs API first, local JSON fallback
+diagnose.py              # LLM -> structured Diagnosis
+    surgeon.py               # LLM -> structured Patch to medic.yaml
+    verify.py                # rerun train + heldout, run checks, compute metrics
+    loop.py                  # diagnose -> patch -> verify, max 3 attempts
+  cli.py                     # Typer + Rich entrypoint
+  runs/                      # local JSON traces + reports (gitignored except samples)
+
+## 4. The patient agent
+- A small research agent that answers a question using 3 tools: `web_search(query)`, `fetch_page(url)`, `calculator(expression)`.
+- **Tools read from `fixtures/`** (map query/url -> stored result). Unknown query returns a clear "no results" — never hits the network in demo mode. (A `--live` flag may exist but is off by default.)
+- Loop: LLM with tool-calling, up to `max_steps` from `medic.yaml`. Records every step.
+- Everything it's allowed to change lives in `medic.yaml`:
+yaml
+system_prompt: |
+  ...
+tools:
+  web_search: {description: "..."}
+  fetch_page: {description: "..."}
+  calculator: {description: "..."}
+max_steps: 8
+retry_on_parse_error: false
+- **Dual tracing:** every span goes to neatlogs AND to `runs/<run_id>.json` (our own recorder: span name, kind, input, output, error, tokens, timings). Medic can run on either source.
+
+## 5. The bugs (presets) and their hard checks
+Build in this order. Bug 4 is hardest: build its check first, and drop it if time runs short.
+
+| # | Bug preset (injected into medic.yaml / tool behavior) | Hard check (no LLM) |
+|---|---|---|
+| 1 | **Wrong arguments:** vague `calculator` description → model passes prose instead of an expression | Every tool call validates against its JSON schema AND final answer equals the known value in `tasks/*.yaml` |
+| 2 | **Malformed JSON:** a fixture tool returns slightly broken JSON and `retry_on_parse_error: false` | Run completes with no unhandled parse exception and answer is correct |
+| 3 | **Infinite loop:** prompt lacks a stop rule, `max_steps` high → agent keeps searching | Finishes in ≤ N steps (N in task file) with a final answer |
+| 4 | **Hallucinated citations:** prompt invites "cite sources" without requiring fetched evidence | Every URL cited in the answer appears in a `fetch_page` result from that run |
+
+Each task in `train.yaml`/`heldout.yaml` has: `id, bug, question, expected_answer (or check params), max_steps_allowed`.
+
+## 6. Medic
+1. **trace_source.py** — `load_trace(run_id)`: try neatlogs read API (find the exact read endpoint and auth in https://docs.neatlogs.com/api-reference; `GET /api/traces/v3/:traceId` exists); on any failure fall back to `runs/<run_id>.json`. Normalize both into one `Trace` pydantic model (list of spans with parent ids).
+2. **diagnose.py** — sends a compact span tree (truncate long outputs) + the failing check result to the LLM. Returns JSON validated by pydantic:
+   `{failing_span_id, failure_type: wrong_args|parse_error|loop|hallucinated_citation|other, evidence, root_cause, confidence}`.
+3. **surgeon.py** — given diagnosis + current `medic.yaml`, returns a structured patch: `{field: system_prompt|tools.<name>.description|max_steps|retry_on_parse_error, new_value, rationale}`. Apply it to a copy, show a unified diff, write it only if verification passes (or on `--apply`).
+4. **verify.py** — rerun the train task, then all held-out tasks for that bug. Run hard checks. Collect per-run metrics: pass/fail, steps, prompt+completion tokens, est. cost, latency.
+5. **loop.py** — up to 3 attempts. Each failed attempt feeds the new trace + failed check back to diagnose. Stop on first full pass (train + heldout).
+6. All LLM calls by Medic are also traced to neatlogs under `workflow_name="medic"`.
+
+## 7. CLI (Rich)
+python cli.py doctor                     # env + neatlogs doctor + LLM ping
+python cli.py run --bug loop             # inject bug, run patient on train task, show check result + trace id
+python cli.py heal --bug loop            # full loop: diagnose -> diff -> rerun -> heldout -> verdict
+python cli.py heal --trace <id>          # heal from an existing trace
+python cli.py report                     # table of all bugs: before/after pass, steps, tokens, cost
+python cli.py reset                      # restore clean medic.yaml
+`
+Screen layout for `heal`: header (bug, task) → live "Patient run" panel (steps streaming) → red FAIL with check reason + neatlogs trace link → "Diagnosis" panel → colored diff panel → "Re-run" panel → held-out results table → big green HEALED (or amber "needs human") with measured before/after numbers.
+
+## 8. Phases and checkpoints
+- Phase 1 (Fri night): repo skeleton, `.env`, neatlogs doctor local + probe, patient agent with fixtures, dual tracing. One clean run visible in neatlogs dashboard AND in `runs/`. Also test the trace read API with that real trace id. → CHECKPOINT 1: report whether API read works and what auth it needs.
+- Phase 2 (Sat): bug presets 1–3 + their checks + tasks (1 train + 2–3 heldout each). `cli.py run --bug X` shows FAIL correctly for each. → CHECKPOINT 2
+- Phase 3 (Sat night–Sun): diagnose, surgeon, verify, loop. `heal` works end-to-end for bugs 1–3 in CLI (plain output OK). → CHECKPOINT 3
+- Phase 4 (Sun): bug 4 (check first). Rich UI polish, `report` command. → CHECKPOINT 4
+- Phase 5 (Sun night): README (problem, demo GIF/screens, quickstart, how others use it with their own agent via `medic.yaml` + checks, architecture diagram in mermaid, honest limitations), record backup demo. → CHECKPOINT 5
+- Optional, only if everything above is solid: FastAPI single page streaming the heal loop over SSE.
+
+## 9. Definition of done
+- `heal` fixes bugs 1–3 (4 if built) and passes held-out tasks, deterministically, twice in a row.
+- Before/after traces visible in neatlogs, tagged by bug and attempt.
+- `report` prints real measured numbers per bug.
+- README lets a stranger run `python cli.py heal --bug loop` in under 5 minutes.
+- No secrets committed.
+
+## 10. Demo script (2 min, for the video)
+1. "Agents don't crash, they quietly go wrong." Show failing run + red check + neatlogs trace.
+2. `heal --bug loop`: diagnosis names the bad span, diff appears, rerun goes green, held-out tasks pass, real numbers shown.
+3. Fast second bug (wrong args).
+4. Close: "Point Medic at your agent's medic.yaml and your own checks. Built on neatlogs."
+
+Start with Phase 1 now. Ask me for any key you need (NEATLOGS_API_KEY, LLM key) instead of guessing.
+
+
+You will have to create agent.md on medic root folder, to update whatever you do, so that when you spawn agents the won't get lost or when the context is too large the won't get lost.
