@@ -130,7 +130,7 @@ def _provider(name: str, role: str = "patient") -> Provider | None:
     if not model:
         # No explicit model: use the role default for this provider. An
         # explicit LLM_MODEL_* always wins, so a caller can override.
-        model = _role_model_for(name)
+        model = _role_model_for(name, role)
     return Provider(
         name=name,
         api_key=get(key_env),
@@ -140,16 +140,22 @@ def _provider(name: str, role: str = "patient") -> Provider | None:
     )
 
 
-def _role_model_for(provider_name: str) -> str:
-    """The first role model served by this provider.
+def _role_model_for(provider_name: str, role: str) -> str:
+    """The first model this provider can serve for THIS role.
 
-    Reads MEDIC_ROLE_MODELS (e.g. "patient:nova-lite") when set, so a run can
-    be pinned to a specific model without touching LLM_MODEL_*.
+    Takes the role explicitly. An earlier version scanned every role's model
+    list and returned the first match, which meant dict ordering decided the
+    outcome: `patient` sorts first, so the medic silently resolved to
+    `nova-lite` — a cheap patient model doing Medic's reasoning, which is the
+    exact degradation the role split exists to prevent. The returned model is
+    checked against the requested role's list ONLY.
     """
-    for key, value in ROLE_MODELS.items():
-        for candidate in value:
-            if _serves(provider_name, candidate):
-                return candidate
+    candidates = ROLE_MODELS.get(role)
+    if not candidates:
+        return ""
+    for candidate in candidates:
+        if _serves(provider_name, candidate):
+            return candidate
     return ""
 
 

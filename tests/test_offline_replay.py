@@ -92,6 +92,42 @@ def test_surgeon_is_not_blamed_for_a_diagnose_crash():
     assert ("except" in loop_src and "attempt" in loop_src.lower())
 
 
+def test_roles_resolve_different_models():
+    """The patient and the medic must NOT resolve to the same model.
+
+    Verified live: `medic` resolved to nova-lite because _role_model_for
+    scanned every role's list and dict order put `patient` first. That hands
+    Medic's reasoning to a cheap patient model — the exact degradation the
+    role split exists to prevent, and invisible in the output because the
+    chain line only showed the patient's model.
+    """
+    import os
+
+    from medic import providers as prov
+
+    patient = prov._role_model_for("litellm", "patient")
+    medic = prov._role_model_for("litellm", "medic")
+
+    assert patient == "nova-lite", f"patient resolved to {patient!r}"
+    assert medic == "claude-sonnet-4.6", f"medic resolved to {medic!r}"
+    assert patient != medic, (
+        f"both roles resolved to {patient!r}; the medic must not use the "
+        f"patient's cheap model"
+    )
+
+
+def test_role_model_does_not_leak_across_roles():
+    """A role must only ever draw from its own model list."""
+    from medic import providers as prov
+
+    for role, allowed in prov.ROLE_MODELS.items():
+        got = prov._role_model_for("litellm", role)
+        assert got in allowed, (
+            f"role {role!r} resolved {got!r}, which is not in its own list "
+            f"{allowed}"
+        )
+
+
 if __name__ == "__main__":
     fns = [v for k, v in sorted(globals().items()) if k.startswith("test_")]
     failed = 0

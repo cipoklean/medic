@@ -1,5 +1,11 @@
 .env
-.env.bak*
+.env.*
+!.env.example
+*.bak
+*.bak.*
+*.orig
+*~
+*.sqlite3.bak*
 .venv/
 __pycache__/
 *.pyc
