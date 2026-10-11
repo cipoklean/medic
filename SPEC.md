@@ -1,6 +1,6 @@
 # Medic, build spec (David's build prompt, condensed to reference)
 
-> Full state of the build lives in `AGENT.md`. This file is the *scope* reference.
+> Full state of the build lives in `AGENTS.md`. This file is the *scope* reference.
 
 ## Pitch
 "Agents don't crash, they quietly go wrong. Medic reads a failing agent's neatlogs trace,

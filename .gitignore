@@ -30,3 +30,16 @@ Thumbs.db
 __pycache__/
 *.pyc
 .pytest_cache/
+
+# Entire's per-agent integration files. They are generated per machine by
+# `entire enable --agent <name>` and are specific to whichever agents a
+# developer happens to use, so they do not belong in a shared repo. Checkpoints
+# still work: .entire/settings.json, graph-agent.md and .gitignore stay tracked.
+.agents/
+.claude/
+.codex/
+.cursor/
+.factory/
+.opencode/
+.pi/
+.github/
