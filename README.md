@@ -40,7 +40,7 @@ the bug was.
 +retry_on_parse_error: true
 ```
 
-**$0.009557 per heal.** Reproduced 3 of 3. Record:
+**$0.009426 per heal.** Reproduced 3 of 3. Record:
 [`evidence/real_heal_loop_parse_error.json`](evidence/real_heal_loop_parse_error.json).
 
 **The live `hallucinated_citation` heal.** Reproduced 3 of 3 on the unmodified
@@ -53,6 +53,8 @@ held-out PASS, **$0.016347**:
 **A cheaper medic, measured.** `claude-haiku` healed `parse_error` with the same
 patient, same tasks, identical patient tokens (24,874). Sonnet 1,568 tokens,
 **$0.009557** total. Haiku 1,545 tokens, **$0.004419**. That is 68% off the medic
+ The Sonnet figure here is a separate run from the headline $0.009426;
+ run-to-run variance is about 1%.
 share with the patient held fixed:
 [`evidence/real_heal_parse_error_haiku_pinned_claude-haiku.json`](evidence/real_heal_parse_error_haiku_pinned_claude-haiku.json).
 

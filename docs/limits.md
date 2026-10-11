@@ -63,6 +63,7 @@ no parse error in any trace. Snippets now carry no figures, enforced by a test.
 | live heal, `parse_error`, Sonnet | `evidence/real_heal_loop_parse_error.json` |
 | live heal, `hallucinated_citation`, Sonnet | `evidence/real_heal_loop_hallucinated_citation.json` |
 | same heal on Haiku, patient held fixed | `evidence/real_heal_parse_error_haiku_pinned_claude-haiku.json` |
+| first Haiku run, patient was nova-lite so totals are not comparable | `evidence/real_heal_parse_error_haiku_nova-lite_unpinned.json` |
 | 3/3 reproduction, parse_error | `evidence/repro_parse_error_nova_micro.json` |
 | 3/3 reproduction, hallucinated_citation | `evidence/repro_citation_nova_micro.json` |
 | 39/39 clean gate | `evidence/gate_nova_micro_clean.json` |
